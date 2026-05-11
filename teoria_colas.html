@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Teoría de Colas — M/M/1 y M/M/s</title>
+<style>
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Italic.woff2') format('woff2');font-weight:500;font-style:italic;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+
+:root{
+  --paper:#f8f6f1;--paper-2:#efe9dc;--paper-3:#d9d0bd;
+  --ink:#0a1628;--navy:#11213f;--navy-light:#2d4272;
+  --gold:#b38a2f;--gold-light:#d4b05a;--gold-soft:#e7d7aa;
+  --muted:#5b6478;--success:#2a5a3a;--error:#8a2a2a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{min-height:100vh;background-image:radial-gradient(circle at 15% 10%,rgba(17,33,63,.045),transparent 48%),radial-gradient(circle at 85% 90%,rgba(179,138,47,.055),transparent 50%);}
+header.masthead{border-bottom:3px double var(--navy);padding:30px 48px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:36px;align-items:end;background:var(--paper);position:relative;}
+header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+.brand{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;border:1.5px solid var(--navy);padding:9px 16px;background:var(--navy);color:var(--paper);}
+.title-block h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(36px,5vw,62px);font-weight:400;line-height:.95;letter-spacing:-.015em;color:var(--navy);}
+.title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+.subtitle{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;letter-spacing:.18em;color:var(--muted);margin-top:10px;text-transform:uppercase;}
+.meta{text-align:right;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
+.meta strong{display:block;color:var(--navy);font-size:11px;font-weight:700;}
+main{display:flex;flex-direction:column;min-height:calc(100vh - 130px);}
+.panel-top{border-bottom:3px double var(--navy);padding:32px 42px 34px;background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);overflow-x:auto;position:relative;}
+.panel-top::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--gold);}
+.panel-bottom{padding:36px 44px 60px;background:var(--paper);}
+.section-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:10px;font-weight:700;}
+.section-label::before{content:"§";font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);font-style:italic;}
+.section-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:500;color:var(--navy);margin-bottom:22px;line-height:1.1;}
+.config-grid{display:grid;grid-template-columns:repeat(4,minmax(230px,1fr));gap:16px;margin-bottom:26px;}
+.config-row{display:flex;align-items:center;gap:14px;padding:16px 18px;background:rgba(248,246,241,.82);border:1px solid var(--paper-3);border-left:3px solid var(--navy);}
+.config-row label{font-size:14px;flex:1;color:var(--navy);font-weight:600;}
+.config-row input,.config-row select{font-family:'JetBrains Mono','Consolas',monospace;font-size:13px;padding:8px 12px;border:1.5px solid var(--navy);background:var(--paper);color:var(--navy);min-width:100px;text-align:center;font-weight:700;}
+.model-card{border:1.5px solid var(--navy);background:var(--paper);padding:22px;box-shadow:4px 4px 0 rgba(179,138,47,.35);margin-top:10px;}
+.actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
+.solve-btn,.example-btn{padding:17px 24px;cursor:pointer;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .25s ease;}
+.solve-btn{background:var(--navy);color:var(--paper);border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);}
+.solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);color:var(--navy);}
+.example-btn{background:transparent;color:var(--navy);border:1px dashed var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;}
+.example-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
+.metric{border:2px solid var(--navy);background:var(--navy);color:var(--paper);box-shadow:5px 5px 0 var(--gold);padding:22px;position:relative;}
+.metric-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-light);font-weight:700;}
+.metric-value{font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;color:var(--paper);line-height:1;margin-top:8px;}
+.metric-value em{color:var(--gold-light);font-style:italic;}
+.note-card{background:var(--paper-2);border:1.5px solid var(--navy);border-left:5px solid var(--gold);padding:22px 24px;box-shadow:4px 4px 0 var(--gold-soft);margin-bottom:26px;}
+.note-card h4{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:var(--navy);font-weight:500;margin-bottom:10px;border-bottom:1px solid var(--gold);padding-bottom:8px;}
+.note-card p{font-size:14px;line-height:1.7;color:var(--ink);}
+.table-scroll{overflow-x:auto;padding-bottom:8px;}
+.result-table{border-collapse:collapse;min-width:900px;width:100%;font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;}
+.result-table th{background:var(--navy);color:var(--paper);padding:10px 12px;border-right:1px solid rgba(212,176,90,.35);border-bottom:2px solid var(--gold);text-align:center;white-space:nowrap;}
+.result-table th.soft{background:var(--gold-soft);color:var(--navy);}
+.result-table td{border:1px solid var(--paper-3);padding:9px;text-align:center;background:var(--paper);color:var(--ink);font-weight:600;}
+.result-table td.label{background:var(--paper-2);color:var(--navy);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:700;font-style:italic;}
+.result-table td.key{background:rgba(212,176,90,.23);border:2px solid var(--gold);font-weight:900;color:var(--navy);}
+.graph-wrap{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 rgba(179,138,47,.28);padding:18px;overflow-x:auto;margin-bottom:30px;}
+svg.queue-graph{width:100%;min-width:980px;height:520px;background:linear-gradient(180deg,rgba(248,246,241,.9),rgba(239,233,220,.35));}
+.axis{stroke:var(--navy);stroke-width:2;}
+.grid{stroke:rgba(17,33,63,.12);stroke-width:1;}
+.bar{fill:rgba(179,138,47,.70);stroke:var(--navy);stroke-width:1;}
+.bar.alt{fill:rgba(17,33,63,.72);}
+.curve{fill:none;stroke:var(--gold);stroke-width:4;}
+.curve2{fill:none;stroke:var(--navy);stroke-width:3;}
+.graph-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;fill:var(--navy);font-weight:700;paint-order:stroke;stroke:var(--paper);stroke-width:5px;}
+.queue-diagram{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:22px;background:var(--paper);border:1.5px solid var(--navy);box-shadow:4px 4px 0 rgba(179,138,47,.25);margin-bottom:28px;}
+.person{width:34px;height:34px;border-radius:50%;border:2px solid var(--navy);background:var(--paper-2);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;font-weight:900;color:var(--navy);}
+.server{width:90px;height:56px;border:2px solid var(--navy);background:rgba(212,176,90,.20);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:700;font-style:italic;color:var(--navy);box-shadow:3px 3px 0 var(--gold-soft);}
+.arrow{font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;color:var(--gold);}
+.empty-state{text-align:center;padding:85px 20px;color:var(--muted);}
+.empty-state .icon{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:130px;line-height:1;color:var(--gold);opacity:.35;margin-bottom:20px;font-weight:300;}
+.empty-state h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:29px;font-weight:500;color:var(--navy);margin-bottom:10px;}
+.empty-state p{font-size:14px;line-height:1.7;max-width:560px;margin:0 auto;color:var(--muted);}
+.error-msg{border:2px solid var(--error);background:rgba(138,42,42,.055);padding:18px 22px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;}
+.error-msg strong{display:block;color:var(--error);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;margin-bottom:6px;font-weight:700;}
+footer{border-top:3px double var(--navy);padding:20px 48px;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;background:var(--paper);position:relative;}
+footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+@media(max-width:1100px){header.masthead{grid-template-columns:1fr;align-items:start;gap:16px}.meta{text-align:left}.config-grid,.summary-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.config-grid,.summary-grid{grid-template-columns:1fr}.panel-top,.panel-bottom{padding-left:22px;padding-right:22px}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">IO · COLAS</div>
+  <div class="title-block">
+    <h1>Teoría de <em>Colas</em></h1>
+    <div class="subtitle">Modelos M/M/1 y M/M/s </div>
+  </div>
+  <div class="meta"><strong>Investigación de Operaciones</strong>Dr. Carlos Miguel López Martínez · Oaxaca<br>Edición Académica · 2026</div>
+</header>
+
+<main>
+  <section class="panel-top">
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Definir el sistema de espera</h2>
+    <div class="config-grid">
+      <div class="config-row"><label>Modelo</label><select id="model"><option value="mm1">M/M/1</option><option value="mms">M/M/s</option></select></div>
+      <div class="config-row"><label>Tasa de llegada λ</label><input type="number" id="lambda" step="any" value="18"></div>
+      <div class="config-row"><label>Tasa de servicio μ</label><input type="number" id="mu" step="any" value="24"></div>
+      <div class="config-row"><label>Servidores s</label><input type="number" id="servers" min="1" max="20" value="1"></div>
+      <div class="config-row"><label>Unidad de tiempo</label><input id="unit" value="hora"></div>
+      <div class="config-row"><label>Clientes para Pₙ</label><input type="number" id="maxn" min="1" max="40" value="12"></div>
+      <div class="config-row"><label>Costo espera Cw</label><input type="number" id="cw" step="any" value="80"></div>
+      <div class="config-row"><label>Costo servidor Cs</label><input type="number" id="cs" step="any" value="150"></div>
+    </div>
+
+    <div class="model-card">
+      <div class="note-card" style="margin-bottom:0;">
+        <h4>Supuestos del modelo</h4>
+        <p>Las llegadas siguen un proceso Poisson con tasa λ, los tiempos de servicio son exponenciales con tasa μ, la disciplina es FIFO, la población es infinita y la capacidad del sistema se considera ilimitada.</p>
+      </div>
+      <div class="actions">
+        <button class="solve-btn" id="solve-btn">Resolver colas</button>
+        <button class="example-btn" id="example-mm1">Ejemplo M/M/1</button>
+        <button class="example-btn" id="example-mms">Ejemplo M/M/s</button>
+        <button class="example-btn" id="clear-btn">Limpiar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-bottom">
+    <div id="results">
+      <div class="empty-state"><div class="icon">λ</div><h3>Esperando parámetros del sistema</h3><p>Capture λ, μ y el número de servidores para calcular los indicadores de desempeño de la cola.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer><div>Teoría de colas · M/M/1 · M/M/s · Dr. Carlos Miguel López Martínez · Mayo 2026</div><div>ρ = λ / sμ</div></footer>
+
+<script>
+const EPS=1e-12;
+const results=document.getElementById('results');
+const modelSelect=document.getElementById('model');
+const serversInput=document.getElementById('servers');
+function fmt(v){if(!isFinite(v))return '—';if(Math.abs(v)<1e-10)return '0';return new Intl.NumberFormat('es-MX',{maximumFractionDigits:4}).format(v);}
+function pct(v){if(!isFinite(v))return '—';return (v*100).toFixed(2)+'%';}
+function money(v){if(!isFinite(v))return '—';return new Intl.NumberFormat('es-MX',{style:'currency',currency:'MXN',maximumFractionDigits:2}).format(v);}
+function readNumber(id,label,positive=true){const v=parseFloat(document.getElementById(id).value);if(isNaN(v)||(positive&&v<=0)||(!positive&&v<0))throw new Error(`${label} debe ser ${positive?'mayor que cero':'no negativo'}.`);return v;}
+function resetResults(){results.innerHTML='<div class="empty-state"><div class="icon">λ</div><h3>Esperando parámetros del sistema</h3><p>Capture λ, μ y el número de servidores para calcular los indicadores de desempeño de la cola.</p></div>';}
+modelSelect.addEventListener('change',()=>{serversInput.disabled=modelSelect.value==='mm1';serversInput.value=modelSelect.value==='mm1'?1:Math.max(2,parseInt(serversInput.value)||2);resetResults();});
+
+function factorial(n){let r=1;for(let i=2;i<=n;i++)r*=i;return r;}
+function readModel(){
+  const model=document.getElementById('model').value;
+  const lambda=readNumber('lambda','La tasa de llegada λ');
+  const mu=readNumber('mu','La tasa de servicio μ');
+  const s=model==='mm1'?1:parseInt(readNumber('servers','El número de servidores'));
+  const unit=document.getElementById('unit').value.trim()||'unidad de tiempo';
+  const maxn=parseInt(readNumber('maxn','Clientes para Pn'));
+  const cw=readNumber('cw','El costo de espera',false);
+  const cs=readNumber('cs','El costo por servidor',false);
+  if(s<1) throw new Error('Debe existir al menos un servidor.');
+  if(lambda>=s*mu) throw new Error(`El sistema no es estable: debe cumplirse λ < sμ. Actualmente λ=${fmt(lambda)} y sμ=${fmt(s*mu)}.`);
+  return {model,lambda,mu,s,unit,maxn,cw,cs};
+}
+
+function solveQueue(q){
+  const a=q.lambda/q.mu;
+  const rho=q.lambda/(q.s*q.mu);
+  let P0,Lq,L,Ls,Wq,W, Pw;
+  if(q.s===1){
+    P0=1-rho;
+    Lq=(rho*rho)/(1-rho);
+    L=rho/(1-rho);
+    Wq=Lq/q.lambda;
+    W=1/(q.mu-q.lambda);
+    Pw=rho;
+  }else{
+    let sum=0;
+    for(let n=0;n<q.s;n++) sum+=Math.pow(a,n)/factorial(n);
+    const last=Math.pow(a,q.s)/(factorial(q.s)*(1-rho));
+    P0=1/(sum+last);
+    Pw=last*P0;
+    Lq=(P0*Math.pow(a,q.s)*rho)/(factorial(q.s)*Math.pow(1-rho,2));
+    Wq=Lq/q.lambda;
+    W=Wq+1/q.mu;
+    L=q.lambda*W;
+  }
+  Ls=q.lambda/q.mu;
+  const idle=1-rho;
+  const costWaiting=q.cw*L;
+  const costServers=q.cs*q.s;
+  const totalCost=costWaiting+costServers;
+  const probs=[];
+  for(let n=0;n<=q.maxn;n++){
+    let pn;
+    if(q.s===1) pn=(1-rho)*Math.pow(rho,n);
+    else if(n<q.s) pn=(Math.pow(a,n)/factorial(n))*P0;
+    else pn=(Math.pow(a,n)/(factorial(q.s)*Math.pow(q.s,n-q.s)))*P0;
+    probs.push(pn);
+  }
+  return {a,rho,P0,Lq,L,Ls,Wq,W,Pw,idle,costWaiting,costServers,totalCost,probs};
+}
+
+function solve(){
+  try{const q=readModel();const r=solveQueue(q);renderResults(q,r);}catch(err){results.innerHTML=`<div class="error-msg"><strong>Datos incompletos o inconsistentes</strong>${err.message}</div>`;}
+}
+
+function renderResults(q,r){
+  let html=`<div class="summary-grid">
+    <div class="metric"><div class="metric-label">Utilización ρ</div><div class="metric-value"><em>${pct(r.rho)}</em></div></div>
+    <div class="metric"><div class="metric-label">Sistema vacío P₀</div><div class="metric-value"><em>${pct(r.P0)}</em></div></div>
+    <div class="metric"><div class="metric-label">Lq</div><div class="metric-value"><em>${fmt(r.Lq)}</em></div></div>
+    <div class="metric"><div class="metric-label">Wq</div><div class="metric-value"><em>${fmt(r.Wq)}</em></div></div>
+  </div>`;
+  html+=`<div class="note-card"><h4>Interpretación operativa</h4><p>El sistema ${q.model==='mm1'?'M/M/1':'M/M/s'} tiene una utilización promedio de <strong>${pct(r.rho)}</strong>. En promedio hay <strong>${fmt(r.Lq)}</strong> clientes esperando en la cola y cada cliente espera <strong>${fmt(r.Wq)}</strong> ${q.unit} antes de iniciar servicio.</p><p style="margin-top:8px;">El tiempo total promedio en el sistema es <strong>${fmt(r.W)}</strong> ${q.unit}, incluyendo espera y servicio.</p></div>`;
+  html+=renderDiagram(q,r);
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:30px 0 14px;">Indicadores principales</div>${renderIndicators(q,r)}`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Distribución de probabilidades Pₙ</div><div class="graph-wrap">${renderProbabilityGraph(q,r)}</div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Comportamiento ante diferentes servidores</div><div class="graph-wrap">${renderServerComparison(q)}</div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Desarrollo matemático</div>${renderProcedure(q,r)}`;
+  html+=renderReferences();
+  results.innerHTML=html;
+  document.querySelector('.panel-bottom').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderDiagram(q,r){
+  let persons='';
+  const count=Math.min(8,Math.max(1,Math.round(r.Lq)));
+  for(let i=1;i<=count;i++) persons+=`<div class="person">${i}</div>`;
+  let servers='';
+  for(let i=1;i<=q.s;i++) servers+=`<div class="server">S${i}</div>`;
+  return `<div class="queue-diagram"><div class="arrow">λ</div>${persons}<div class="arrow">→</div>${servers}<div class="arrow">→</div><div class="person">salida</div></div>`;
+}
+function renderIndicators(q,r){
+  const rows=[
+    ['λ','Tasa promedio de llegada',`${fmt(q.lambda)} clientes/${q.unit}`],
+    ['μ','Tasa promedio de servicio por servidor',`${fmt(q.mu)} clientes/${q.unit}`],
+    ['s','Número de servidores',q.s],
+    ['ρ','Utilización del sistema',pct(r.rho)],
+    ['P₀','Probabilidad de sistema vacío',pct(r.P0)],
+    ['Pw','Probabilidad de esperar',pct(r.Pw)],
+    ['Lq','Clientes promedio en cola',fmt(r.Lq)],
+    ['L','Clientes promedio en sistema',fmt(r.L)],
+    ['Wq','Tiempo promedio en cola',`${fmt(r.Wq)} ${q.unit}`],
+    ['W','Tiempo promedio en sistema',`${fmt(r.W)} ${q.unit}`],
+    ['Costo espera','Cw × L',money(r.costWaiting)],
+    ['Costo servidores','Cs × s',money(r.costServers)],
+    ['Costo total','Costo espera + costo servidores',money(r.totalCost)]
+  ];
+  let html='<div class="table-scroll"><table class="result-table"><thead><tr><th>Indicador</th><th>Descripción</th><th class="soft">Valor</th></tr></thead><tbody>';
+  rows.forEach(row=>html+=`<tr><td class="label">${row[0]}</td><td>${row[1]}</td><td class="key">${row[2]}</td></tr>`);
+  html+='</tbody></table></div>';
+  return html;
+}
+function renderProbabilityGraph(q,r){
+  const W=1100,H=520,pad=70;
+  const maxP=Math.max(...r.probs)*1.1;
+  const barW=(W-2*pad)/(r.probs.length);
+  let svg=`<svg class="queue-graph" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for(let i=0;i<=5;i++){const y=pad+i*(H-2*pad)/5;svg+=`<line class="grid" x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}"/>`;}
+  svg+=`<line class="axis" x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}"/><line class="axis" x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}"/>`;
+  r.probs.forEach((p,n)=>{
+    const x=pad+n*barW+barW*0.12;
+    const h=(p/maxP)*(H-2*pad);
+    const y=H-pad-h;
+    svg+=`<rect class="bar ${n%2?'alt':''}" x="${x}" y="${y}" width="${barW*0.76}" height="${h}"/>`;
+    svg+=`<text class="graph-label" x="${x+barW*.38}" y="${H-pad+18}" text-anchor="middle">${n}</text>`;
+  });
+  svg+=`<text class="graph-label" x="${W/2}" y="${H-18}">Número de clientes en el sistema n</text><text class="graph-label" x="24" y="${pad-20}">Pₙ</text>`;
+  svg+='</svg>';
+  return svg;
+}
+function renderServerComparison(q){
+  const W=1100,H=520,pad=70;
+  const data=[];
+  for(let s=1;s<=Math.max(8,q.s+4);s++){
+    if(q.lambda<s*q.mu){
+      const r=solveQueue({...q,s});
+      data.push({s,Wq:r.Wq,rho:r.rho,total:r.totalCost});
+    }
+  }
+  const maxY=Math.max(...data.map(d=>d.Wq))*1.15||1;
+  const maxCost=Math.max(...data.map(d=>d.total))*1.1||1;
+  const xFor=s=>pad+(s-1)/(Math.max(...data.map(d=>d.s))-1||1)*(W-2*pad);
+  const yFor=v=>H-pad-(v/maxY)*(H-2*pad);
+  const yCost=v=>H-pad-(v/maxCost)*(H-2*pad);
+  const path1=data.map((d,i)=>(i?'L':'M')+` ${xFor(d.s)} ${yFor(d.Wq)}`).join(' ');
+  const path2=data.map((d,i)=>(i?'L':'M')+` ${xFor(d.s)} ${yCost(d.total)}`).join(' ');
+  let svg=`<svg class="queue-graph" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg+=`<line class="axis" x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}"/><line class="axis" x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}"/>`;
+  svg+=`<path class="curve" d="${path1}"/><path class="curve2" d="${path2}"/>`;
+  data.forEach(d=>{svg+=`<circle cx="${xFor(d.s)}" cy="${yFor(d.Wq)}" r="5" fill="#b38a2f"/><text class="graph-label" x="${xFor(d.s)}" y="${H-pad+20}" text-anchor="middle">${d.s}</text>`;});
+  svg+=`<text class="graph-label" x="${W-320}" y="${pad+22}">Wq</text><text class="graph-label" x="${W-320}" y="${pad+46}">Costo total</text><text class="graph-label" x="${W/2}" y="${H-18}">Número de servidores s</text>`;
+  svg+='</svg>';
+  return svg;
+}
+function renderProcedure(q,r){
+  if(q.s===1){
+    return `<div class="note-card"><h4>Modelo M/M/1</h4><p><strong>ρ = λ/μ</strong> = ${fmt(q.lambda)} / ${fmt(q.mu)} = <strong>${fmt(r.rho)}</strong></p><p><strong>P₀ = 1 − ρ</strong> = <strong>${fmt(r.P0)}</strong></p><p><strong>L = ρ/(1−ρ)</strong> = <strong>${fmt(r.L)}</strong></p><p><strong>Lq = ρ²/(1−ρ)</strong> = <strong>${fmt(r.Lq)}</strong></p><p><strong>W = 1/(μ−λ)</strong> = <strong>${fmt(r.W)}</strong></p><p><strong>Wq = Lq/λ</strong> = <strong>${fmt(r.Wq)}</strong></p></div>`;
+  }
+  return `<div class="note-card"><h4>Modelo M/M/s</h4><p><strong>a = λ/μ</strong> = ${fmt(r.a)}</p><p><strong>ρ = λ/(sμ)</strong> = ${fmt(q.lambda)} / (${q.s} × ${fmt(q.mu)}) = <strong>${fmt(r.rho)}</strong></p><p><strong>P₀</strong> se calcula con la suma de términos de Erlang C.</p><p><strong>Pw</strong>, probabilidad de que un cliente espere, es <strong>${fmt(r.Pw)}</strong>.</p><p><strong>Lq</strong> = ${fmt(r.Lq)}, <strong>Wq</strong> = ${fmt(r.Wq)}, <strong>W</strong> = ${fmt(r.W)}.</p></div>`;
+}
+function renderReferences(){
+  return `<div class="note-card"><h4>Referencias académicas</h4><p><strong>Fundamento:</strong> los modelos M/M/1 y M/M/s pertenecen a la notación Kendall, donde las llegadas son Markovianas, los servicios son Markovianos y existen uno o varios servidores.</p><p><strong>Bibliografía sugerida:</strong> Taha, <em>Investigación de Operaciones</em>; Hillier y Lieberman, <em>Introducción a la Investigación de Operaciones</em>; Gross & Harris, <em>Fundamentals of Queueing Theory</em>.</p></div>`;
+}
+
+document.getElementById('solve-btn').addEventListener('click',solve);
+document.getElementById('example-mm1').addEventListener('click',()=>{modelSelect.value='mm1';serversInput.value=1;serversInput.disabled=true;document.getElementById('lambda').value=18;document.getElementById('mu').value=24;document.getElementById('unit').value='hora';document.getElementById('maxn').value=12;document.getElementById('cw').value=80;document.getElementById('cs').value=150;solve();});
+document.getElementById('example-mms').addEventListener('click',()=>{modelSelect.value='mms';serversInput.disabled=false;serversInput.value=3;document.getElementById('lambda').value=40;document.getElementById('mu').value=18;document.getElementById('unit').value='hora';document.getElementById('maxn').value=18;document.getElementById('cw').value=80;document.getElementById('cs').value=150;solve();});
+document.getElementById('clear-btn').addEventListener('click',()=>{['lambda','mu','servers','unit','maxn','cw','cs'].forEach(id=>document.getElementById(id).value='');resetResults();});
+function runSelfTests(){
+  const q={model:'mm1',lambda:3,mu:5,s:1,unit:'hora',maxn:5,cw:0,cs:0};
+  const r=solveQueue(q);
+  console.assert(Math.abs(r.rho-0.6)<1e-9,'Test M/M/1: rho esperado 0.6');
+  console.assert(Math.abs(r.L-1.5)<1e-9,'Test M/M/1: L esperado 1.5');
+  const qs={model:'mms',lambda:4,mu:3,s:2,unit:'hora',maxn:5,cw:0,cs:0};
+  const rs=solveQueue(qs);
+  console.assert(rs.rho<1,'Test M/M/s: sistema estable');
+}
+modelSelect.dispatchEvent(new Event('change'));
+document.getElementById('example-mm1').click();
+runSelfTests();
+</script>
+</body>
+</html>

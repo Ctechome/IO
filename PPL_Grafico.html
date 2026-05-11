@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Programación Lineal — Método Gráfico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fafaf7;
+    --paper-2:#f2f0e8;
+    --paper-3:#e8e5da;
+    --ink:#0a1628;
+    --navy:#14244a;
+    --navy-light:#2a3a6e;
+    --gold:#b08d28;
+    --gold-light:#d4ae47;
+    --gold-soft:#e8d59a;
+    --rule:#1a2540;
+    --muted:#5b6478;
+    --feasible:rgba(176,141,40,0.16);
+    --feasible-stroke:#b08d28;
+    --grid:#d8d4c4;
+    --error:#8a2a2a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Sans 3',system-ui,sans-serif;
+    font-weight:400;
+  }
+  body{
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(20,36,74,0.04), transparent 50%),
+      radial-gradient(circle at 85% 90%, rgba(176,141,40,0.05), transparent 50%);
+    min-height:100vh;
+  }
+
+  /* ============== HEADER ============== */
+  header.masthead{
+    border-bottom:3px double var(--navy);
+    padding:32px 48px 26px;
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    align-items:end;
+    gap:36px;
+    background:var(--paper);
+    position:relative;
+  }
+  header.masthead::after{
+    content:"";
+    position:absolute;
+    bottom:-9px;left:0;right:0;height:1px;
+    background:var(--gold);
+  }
+  .brand{
+    font-family:'Cormorant Garamond',serif;
+    font-weight:600;
+    font-size:13px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    border:1.5px solid var(--navy);
+    padding:9px 16px;
+    background:var(--navy);
+    color:var(--paper);
+  }
+  .title-block h1{
+    font-family:'Cormorant Garamond',serif;
+    font-weight:400;
+    font-size:clamp(38px,5.5vw,62px);
+    line-height:0.95;
+    letter-spacing:-0.015em;
+    color:var(--navy);
+  }
+  .title-block h1 em{
+    font-style:italic;
+    color:var(--gold);
+    font-weight:500;
+  }
+  .title-block .subtitle{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--muted);
+    margin-top:10px;
+    text-transform:uppercase;
+    font-weight:500;
+  }
+  .meta{
+    text-align:right;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    line-height:1.7;
+    color:var(--muted);
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+  }
+  .meta strong{color:var(--navy);display:block;font-size:11px;font-weight:600;}
+
+  /* ============== LAYOUT ============== */
+  main{
+    display:grid;
+    grid-template-columns:minmax(420px,480px) 1fr;
+    gap:0;
+    min-height:calc(100vh - 130px);
+  }
+  @media(max-width:1024px){
+    main{grid-template-columns:1fr;}
+    .panel-left{border-right:none !important;border-bottom:3px double var(--navy);}
+  }
+
+  /* ============== LEFT PANEL ============== */
+  .panel-left{
+    border-right:3px double var(--navy);
+    padding:36px 32px 60px;
+    background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
+    overflow-y:auto;
+    position:relative;
+  }
+  .panel-left::before{
+    content:"";
+    position:absolute;
+    top:0;left:-1px;right:-1px;
+    height:1px;background:var(--gold);
+  }
+  .section-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:8px;
+    display:flex;align-items:center;gap:10px;
+    font-weight:600;
+  }
+  .section-label::before{
+    content:"§";
+    font-family:'Cormorant Garamond',serif;
+    font-size:16px;
+    color:var(--gold);
+    font-style:italic;
+  }
+  .section-title{
+    font-family:'Cormorant Garamond',serif;
+    font-size:26px;
+    font-weight:500;
+    margin-bottom:22px;
+    line-height:1.1;
+    color:var(--navy);
+    letter-spacing:-0.01em;
+  }
+
+  .config-row{
+    display:flex;align-items:center;gap:14px;
+    margin-bottom:16px;
+    padding:16px 18px;
+    background:var(--paper);
+    border:1px solid var(--paper-3);
+    border-left:3px solid var(--navy);
+    box-shadow:0 1px 0 rgba(20,36,74,0.04);
+  }
+  .config-row label{
+    font-size:14px;
+    flex:1;
+    font-weight:500;
+    color:var(--navy);
+  }
+  .config-row input,.config-row select{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    padding:8px 12px;
+    border:1.5px solid var(--navy);
+    background:var(--paper);
+    color:var(--navy);
+    width:90px;
+    text-align:center;
+    font-weight:600;
+  }
+  .config-row select{width:auto;cursor:pointer;}
+  .config-row input:focus,.config-row select:focus{
+    outline:2px solid var(--gold);
+    outline-offset:2px;
+  }
+
+  .objective-block{
+    border:1.5px solid var(--navy);
+    padding:22px 20px 18px;
+    background:var(--paper);
+    margin:8px 0 26px;
+    position:relative;
+    box-shadow:3px 3px 0 var(--gold-soft);
+  }
+  .objective-block::before{
+    content:"Z";
+    position:absolute;
+    top:-16px;left:18px;
+    background:var(--gold);
+    color:var(--paper);
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-weight:600;
+    font-size:20px;
+    width:32px;height:32px;
+    display:flex;align-items:center;justify-content:center;
+    border-radius:50%;
+    box-shadow:0 2px 4px rgba(176,141,40,0.3);
+  }
+  .equation-row{
+    display:flex;align-items:center;gap:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    flex-wrap:wrap;
+  }
+  .equation-row .coef{
+    width:68px;
+    padding:8px 10px;
+    border:1px solid var(--navy);
+    background:var(--paper-2);
+    text-align:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--navy);
+    font-weight:600;
+    transition:all 0.15s;
+  }
+  .equation-row .coef:focus{
+    outline:none;
+    border-color:var(--gold);
+    background:#fff;
+    box-shadow:0 0 0 2px var(--gold-soft);
+  }
+  .equation-row .var{
+    font-style:italic;
+    font-family:'Cormorant Garamond',serif;
+    font-size:18px;
+    color:var(--navy);
+    font-weight:500;
+  }
+  .equation-row .op{
+    border:1px solid var(--navy);
+    background:var(--paper);
+    padding:6px 10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:700;
+    color:var(--navy);
+  }
+  .equation-row .op:hover{background:var(--navy);color:var(--paper);}
+
+  .constraint{
+    border:1px solid var(--paper-3);
+    border-left:3px solid var(--gold);
+    padding:14px 12px 12px 16px;
+    background:var(--paper);
+    margin-bottom:10px;
+    position:relative;
+    transition:all 0.2s;
+  }
+  /* Layout especial para la fila de restricción usando CSS Grid
+     para garantizar que SIEMPRE quepa en una sola línea */
+  .constraint .equation-row{
+    display:grid;
+    grid-template-columns: 52px 18px 8px 52px 18px 38px 52px;
+    gap:4px;
+    align-items:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+  }
+  .constraint .equation-row .coef{
+    width:100%;
+    padding:7px 4px;
+    font-size:12px;
+  }
+  .constraint .equation-row .var{
+    font-size:16px;
+    text-align:center;
+  }
+  .constraint .equation-row .op-select{
+    width:100% !important;
+    padding:7px 2px;
+    font-size:12px;
+  }
+  .constraint:hover{
+    border-left-color:var(--navy);
+    box-shadow:0 2px 8px rgba(20,36,74,0.06);
+  }
+  .constraint .num{
+    position:absolute;
+    left:-13px;top:14px;
+    background:var(--navy);
+    color:var(--paper);
+    width:26px;height:26px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:700;
+    border-radius:50%;
+    border:2px solid var(--paper);
+    box-shadow:0 0 0 1px var(--navy);
+  }
+  .nonneg{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:18px;
+    padding:12px 16px;
+    background:rgba(20,36,74,0.04);
+    border:1px dashed var(--navy);
+    text-align:center;
+    letter-spacing:0.05em;
+  }
+  .nonneg em{
+    font-style:italic;
+    color:var(--navy);
+    font-weight:700;
+    font-family:'Cormorant Garamond',serif;
+    font-size:14px;
+  }
+
+  .solve-btn{
+    width:100%;
+    margin-top:28px;
+    padding:20px;
+    background:var(--navy);
+    color:var(--paper);
+    font-family:'Cormorant Garamond',serif;
+    font-size:20px;
+    font-weight:600;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    cursor:pointer;
+    transition:all 0.3s cubic-bezier(.4,0,.2,1);
+    position:relative;
+    overflow:hidden;
+    border:1.5px solid var(--navy);
+    box-shadow:4px 4px 0 var(--gold);
+  }
+  .solve-btn::after{
+    content:"→";
+    margin-left:12px;
+    display:inline-block;
+    transition:transform 0.3s;
+    color:var(--gold-light);
+  }
+  .solve-btn:hover{
+    background:var(--gold);
+    border-color:var(--gold);
+    box-shadow:4px 4px 0 var(--navy);
+  }
+  .solve-btn:hover::after{
+    transform:translateX(8px);
+    color:var(--navy);
+  }
+  .solve-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--gold);}
+
+  .example-btn{
+    width:100%;
+    margin-top:12px;
+    padding:11px;
+    background:transparent;
+    border:1px dashed var(--navy);
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    cursor:pointer;
+    color:var(--navy);
+    font-weight:500;
+    transition:all 0.2s;
+  }
+  .example-btn:hover{
+    background:var(--navy);
+    color:var(--paper);
+    border-style:solid;
+  }
+
+  /* ============== RIGHT PANEL ============== */
+  .panel-right{
+    padding:36px 44px 60px;
+    background:var(--paper);
+    overflow-y:auto;
+  }
+  .results-grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:30px;
+  }
+  .graph-container{
+    border:1.5px solid var(--navy);
+    background:var(--paper);
+    padding:18px;
+    box-shadow:6px 6px 0 var(--gold-soft);
+    position:relative;
+  }
+  .graph-container::before{
+    content:"FIG. 1";
+    position:absolute;
+    top:-10px;left:18px;
+    background:var(--paper);
+    padding:0 10px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.15em;
+    color:var(--gold);
+    font-weight:700;
+  }
+  #plot{
+    width:100%;
+    height:auto;
+    aspect-ratio:1/1;
+    max-height:620px;
+    display:block;
+  }
+
+  .verdict{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border:2px solid var(--navy);
+    background:var(--navy);
+    color:var(--paper);
+    box-shadow:6px 6px 0 var(--gold);
+    position:relative;
+  }
+  .verdict::before{
+    content:"";
+    position:absolute;
+    top:8px;left:8px;right:8px;bottom:8px;
+    border:1px solid rgba(212,174,71,0.3);
+    pointer-events:none;
+  }
+  .verdict-cell{
+    padding:28px 32px;
+    position:relative;
+  }
+  .verdict-cell:first-child{border-right:1px solid rgba(212,174,71,0.3);}
+  .verdict-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.22em;
+    text-transform:uppercase;
+    color:var(--gold-light);
+    margin-bottom:8px;
+    font-weight:600;
+  }
+  .verdict-value{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(32px,4.5vw,48px);
+    font-weight:400;
+    line-height:1;
+    letter-spacing:-0.02em;
+    color:var(--paper);
+  }
+  .verdict-value em{
+    color:var(--gold-light);
+    font-style:italic;
+    font-weight:500;
+  }
+
+  .vertices-table{
+    border:1.5px solid var(--navy);
+    overflow:hidden;
+    background:var(--paper);
+  }
+  .vertices-table table{
+    width:100%;
+    border-collapse:collapse;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+  }
+  .vertices-table th{
+    background:var(--navy);
+    color:var(--paper);
+    padding:14px 16px;
+    text-align:left;
+    font-weight:600;
+    font-size:11px;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    border-bottom:2px solid var(--gold);
+  }
+  .vertices-table td{
+    padding:12px 16px;
+    border-bottom:1px solid var(--paper-3);
+    background:var(--paper);
+    color:var(--ink);
+  }
+  .vertices-table tr:last-child td{border-bottom:none;}
+  .vertices-table tr.optimal td{
+    background:linear-gradient(90deg,var(--gold-soft) 0%,var(--paper-2) 100%);
+    color:var(--navy);
+    font-weight:700;
+  }
+  .vertices-table tr.optimal td:first-child{
+    border-left:4px solid var(--gold);
+    padding-left:14px;
+  }
+  .vertices-table tr:hover:not(.optimal) td{background:var(--paper-2);}
+
+  .legend{
+    display:flex;flex-wrap:wrap;gap:18px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:14px;
+    padding-top:14px;
+    border-top:1px solid var(--paper-3);
+    font-weight:500;
+  }
+  .legend span{display:flex;align-items:center;gap:8px;}
+  .swatch{
+    width:16px;height:16px;
+    border:1px solid var(--navy);
+  }
+
+  .empty-state{
+    text-align:center;
+    padding:90px 20px;
+    color:var(--muted);
+  }
+  .empty-state .icon{
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    font-size:140px;
+    line-height:1;
+    color:var(--gold);
+    opacity:0.35;
+    margin-bottom:24px;
+    font-weight:300;
+  }
+  .empty-state h3{
+    font-family:'Cormorant Garamond',serif;
+    font-size:28px;
+    font-weight:500;
+    color:var(--navy);
+    margin-bottom:10px;
+    letter-spacing:-0.01em;
+  }
+  .empty-state p{
+    font-size:14px;
+    line-height:1.7;
+    max-width:420px;
+    margin:0 auto;
+    color:var(--muted);
+  }
+  .empty-state strong{color:var(--navy);}
+
+  .error-msg{
+    border:2px solid var(--error);
+    background:rgba(138,42,42,0.05);
+    padding:18px 22px;
+    font-size:14px;
+    line-height:1.6;
+    color:var(--ink);
+  }
+  .error-msg strong{
+    color:var(--error);
+    font-family:'Cormorant Garamond',serif;
+    font-size:17px;
+    display:block;
+    margin-bottom:6px;
+    font-weight:600;
+  }
+
+  .description-text{
+    font-size:13px;
+    color:var(--muted);
+    margin-top:14px;
+    line-height:1.7;
+  }
+  .description-text strong{color:var(--navy);font-weight:600;}
+
+  @keyframes fadeInUp{
+    from{opacity:0;transform:translateY(24px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .results-grid > *{animation:fadeInUp 0.6s cubic-bezier(.4,0,.2,1) backwards;}
+  .results-grid > *:nth-child(1){animation-delay:0.05s;}
+  .results-grid > *:nth-child(2){animation-delay:0.18s;}
+  .results-grid > *:nth-child(3){animation-delay:0.31s;}
+
+  footer{
+    border-top:3px double var(--navy);
+    padding:20px 48px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--muted);
+    display:flex;justify-content:space-between;
+    background:var(--paper);
+    position:relative;
+  }
+  footer::before{
+    content:"";
+    position:absolute;
+    top:-9px;left:0;right:0;height:1px;
+    background:var(--gold);
+  }
+
+  .panel-left::-webkit-scrollbar,.panel-right::-webkit-scrollbar{width:8px;}
+  .panel-left::-webkit-scrollbar-track,.panel-right::-webkit-scrollbar-track{background:var(--paper-2);}
+  .panel-left::-webkit-scrollbar-thumb,.panel-right::-webkit-scrollbar-thumb{
+    background:var(--navy);border-radius:4px;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="brand">IO · MÉTODO GRÁFICO</div>
+  <div class="title-block">
+    <h1>Programación <em>Lineal</em></h1>
+    <div class="subtitle">Solución para problemas de dos variables · Maximización & Minimización</div>
+  </div>
+  <div class="meta">
+    <strong>Investigación de Operaciones</strong>
+    Dr. Carlos Miguel López Martínez· Oaxaca<br>
+    Edición Académica · 2026
+  </div>
+</header>
+
+<main>
+  <section class="panel-left">
+
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Definir el modelo</h2>
+
+    <div class="config-row">
+      <label>Tipo de optimización</label>
+      <select id="opt-type">
+        <option value="max">Maximizar</option>
+        <option value="min">Minimizar</option>
+      </select>
+    </div>
+
+    <div class="config-row">
+      <label>Número de restricciones</label>
+      <input type="number" id="num-constraints" min="1" max="10" value="2"/>
+    </div>
+
+    <div class="section-label" style="margin-top:30px;">Función objetivo</div>
+    <div class="objective-block">
+      <div class="equation-row">
+        <span class="var">Z</span>
+        <span class="op" style="cursor:default;border:none;background:transparent;">=</span>
+        <input type="number" step="any" class="coef" id="c1" value="3"/>
+        <span class="var">x₁</span>
+        <span class="op" style="cursor:default;border:none;background:transparent;">+</span>
+        <input type="number" step="any" class="coef" id="c2" value="5"/>
+        <span class="var">x₂</span>
+      </div>
+    </div>
+
+    <div class="section-label">Restricciones</div>
+
+    <!-- Encabezados de columna para guía visual -->
+    <div style="display:grid;
+                grid-template-columns: 52px 18px 8px 52px 18px 38px 52px;
+                gap:4px; align-items:center;
+                padding:0 12px 4px 16px; margin-left:0;
+                font-family:'JetBrains Mono',monospace;
+                font-size:9px; color:var(--muted);
+                letter-spacing:0.1em; text-transform:uppercase;
+                font-weight:600;">
+      <span style="text-align:center;">a₁</span>
+      <span></span>
+      <span></span>
+      <span style="text-align:center;">a₂</span>
+      <span></span>
+      <span style="text-align:center;">op</span>
+      <span style="text-align:center;">b</span>
+    </div>
+
+    <div id="constraints-container" style="margin-top:6px;"></div>
+
+    <div class="nonneg">
+      <em>x₁ ≥ 0</em> &nbsp;,&nbsp; <em>x₂ ≥ 0</em> &nbsp;·&nbsp; (no negatividad)
+    </div>
+
+    <button class="solve-btn" id="solve-btn">Resolver</button>
+    <button class="example-btn" id="example-btn">↻ Cargar ejemplo clásico</button>
+
+  </section>
+
+  <section class="panel-right">
+    <div id="results">
+      <div class="empty-state">
+        <div class="icon">∇</div>
+        <h3>Esperando el modelo</h3>
+        <p>Configure la función objetivo y las restricciones del lado izquierdo, luego pulse <strong>Resolver</strong> para obtener la región factible, los puntos extremos y la solución óptima.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Método de los vértices · Evaluación exhaustiva de puntos extremos</div>
+  <div>x₁, x₂ ∈ ℝ⁺</div>
+</footer>
+
+<script>
+const EPS = 1e-9;
+
+const numConstraintsInput = document.getElementById('num-constraints');
+const container = document.getElementById('constraints-container');
+
+function buildConstraints(n){
+  const prev = [...container.querySelectorAll('.constraint')].map(c=>({
+    a1: c.querySelector('.a1').value,
+    a2: c.querySelector('.a2').value,
+    op: c.querySelector('.op-select').value,
+    b:  c.querySelector('.bval').value
+  }));
+  container.innerHTML = '';
+  for(let i=0;i<n;i++){
+    const old = prev[i] || {a1:'',a2:'',op:'<=',b:''};
+    const div = document.createElement('div');
+    div.className='constraint';
+    div.innerHTML=`
+      <div class="num">${i+1}</div>
+      <div class="equation-row">
+        <input type="number" step="any" class="coef a1" value="${old.a1}" placeholder="a₁"/>
+        <span class="var">x₁</span>
+        <span style="text-align:center;color:var(--navy);font-weight:600;">+</span>
+        <input type="number" step="any" class="coef a2" value="${old.a2}" placeholder="a₂"/>
+        <span class="var">x₂</span>
+        <select class="op-select coef">
+          <option value="<=" ${old.op==='<='?'selected':''}>≤</option>
+          <option value=">=" ${old.op==='>='?'selected':''}>≥</option>
+          <option value="="  ${old.op==='='?'selected':''}>=</option>
+        </select>
+        <input type="number" step="any" class="coef bval" value="${old.b}" placeholder="b"/>
+      </div>`;
+    container.appendChild(div);
+  }
+}
+
+numConstraintsInput.addEventListener('change',()=>{
+  let n = parseInt(numConstraintsInput.value);
+  if(isNaN(n)||n<1) n=1; if(n>10) n=10;
+  numConstraintsInput.value=n;
+  buildConstraints(n);
+});
+
+function readModel(){
+  const type = document.getElementById('opt-type').value;
+  const c1 = parseFloat(document.getElementById('c1').value);
+  const c2 = parseFloat(document.getElementById('c2').value);
+  if(isNaN(c1)||isNaN(c2)) throw new Error('La función objetivo tiene coeficientes inválidos.');
+
+  const constraints = [];
+  document.querySelectorAll('.constraint').forEach((c,i)=>{
+    const a1 = parseFloat(c.querySelector('.a1').value);
+    const a2 = parseFloat(c.querySelector('.a2').value);
+    const op = c.querySelector('.op-select').value;
+    const b  = parseFloat(c.querySelector('.bval').value);
+    if(isNaN(a1)||isNaN(a2)||isNaN(b))
+      throw new Error(`La restricción #${i+1} tiene valores incompletos o inválidos.`);
+    constraints.push({a1,a2,op,b,id:i+1});
+  });
+  if(constraints.length===0) throw new Error('Debe definir al menos una restricción.');
+  return {type,c1,c2,constraints};
+}
+
+function intersect(L1,L2){
+  const det = L1.a*L2.b - L2.a*L1.b;
+  if(Math.abs(det)<EPS) return null;
+  const x = (L1.c*L2.b - L2.c*L1.b)/det;
+  const y = (L1.a*L2.c - L2.a*L1.c)/det;
+  return {x,y};
+}
+
+function isFeasible(pt,constraints){
+  if(pt.x < -EPS || pt.y < -EPS) return false;
+  for(const r of constraints){
+    const lhs = r.a1*pt.x + r.a2*pt.y;
+    if(r.op==='<=' && lhs > r.b + EPS) return false;
+    if(r.op==='>=' && lhs < r.b - EPS) return false;
+    if(r.op==='='  && Math.abs(lhs - r.b) > 1e-6) return false;
+  }
+  return true;
+}
+
+function solve(model){
+  const lines = model.constraints.map(r=>({a:r.a1,b:r.a2,c:r.b,src:`R${r.id}`}));
+  lines.push({a:1,b:0,c:0,src:'x₁=0'});
+  lines.push({a:0,b:1,c:0,src:'x₂=0'});
+
+  const candidates = [];
+  for(let i=0;i<lines.length;i++){
+    for(let j=i+1;j<lines.length;j++){
+      const p = intersect(lines[i],lines[j]);
+      if(p && isFinite(p.x) && isFinite(p.y)){
+        candidates.push({...p, from:[lines[i].src,lines[j].src]});
+      }
+    }
+  }
+
+  const feasible = [];
+  for(const p of candidates){
+    if(isFeasible(p,model.constraints)){
+      const dup = feasible.find(q=>Math.abs(q.x-p.x)<1e-6 && Math.abs(q.y-p.y)<1e-6);
+      if(dup){
+        dup.from = [...new Set([...dup.from,...p.from])];
+      } else {
+        feasible.push({x:p.x,y:p.y,from:p.from});
+      }
+    }
+  }
+
+  if(feasible.length===0){
+    return {feasible:[],status:'infeasible',model};
+  }
+
+  feasible.forEach(p=>{
+    p.Z = model.c1*p.x + model.c2*p.y;
+  });
+
+  let optimal;
+  if(model.type==='max'){
+    optimal = feasible.reduce((a,b)=>a.Z>=b.Z?a:b);
+  } else {
+    optimal = feasible.reduce((a,b)=>a.Z<=b.Z?a:b);
+  }
+
+  const dir = model.type==='max'
+    ? {dx:Math.sign(model.c1)||0, dy:Math.sign(model.c2)||0}
+    : {dx:-Math.sign(model.c1)||0, dy:-Math.sign(model.c2)||0};
+  const farPoint = {x:optimal.x + dir.dx*1e6, y:optimal.y + dir.dy*1e6};
+  let status = 'optimal';
+  if((dir.dx!==0||dir.dy!==0) && isFeasible(farPoint,model.constraints)){
+    const Zfar = model.c1*farPoint.x + model.c2*farPoint.y;
+    if((model.type==='max' && Zfar > optimal.Z + 1) ||
+       (model.type==='min' && Zfar < optimal.Z - 1)){
+      status = 'unbounded';
+    }
+  }
+
+  const cx = feasible.reduce((s,p)=>s+p.x,0)/feasible.length;
+  const cy = feasible.reduce((s,p)=>s+p.y,0)/feasible.length;
+  const polygon = [...feasible].sort((a,b)=>
+    Math.atan2(a.y-cy,a.x-cx) - Math.atan2(b.y-cy,b.x-cx)
+  );
+
+  return {feasible,polygon,optimal,status,model};
+}
+
+function renderPlot(result){
+  const W = 620, H = 620;
+  const margin = {top:36,right:36,bottom:56,left:66};
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+
+  const xs = result.feasible.map(p=>p.x);
+  const ys = result.feasible.map(p=>p.y);
+  const maxX = Math.max(1,...xs)*1.25;
+  const maxY = Math.max(1,...ys)*1.25;
+  const scale = Math.max(maxX,maxY);
+
+  const sx = v => margin.left + (v/scale)*plotW;
+  const sy = v => margin.top + plotH - (v/scale)*plotH;
+
+  const tickStep = Math.pow(10,Math.floor(Math.log10(scale)));
+  const niceStep = scale/tickStep < 2 ? tickStep/5 : scale/tickStep < 5 ? tickStep/2 : tickStep;
+
+  let svg = `<svg id="plot" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<rect x="${margin.left}" y="${margin.top}" width="${plotW}" height="${plotH}" fill="#fcfbf6"/>`;
+
+  svg += `<g stroke="#d8d4c4" stroke-width="0.5">`;
+  for(let v=0; v<=scale; v+=niceStep){
+    svg += `<line x1="${sx(v)}" y1="${margin.top}" x2="${sx(v)}" y2="${margin.top+plotH}"/>`;
+    svg += `<line x1="${margin.left}" y1="${sy(v)}" x2="${margin.left+plotW}" y2="${sy(v)}"/>`;
+  }
+  svg += `</g>`;
+
+  if(result.polygon && result.polygon.length>=3){
+    const pts = result.polygon.map(p=>`${sx(p.x)},${sy(p.y)}`).join(' ');
+    svg += `<polygon points="${pts}" fill="rgba(176,141,40,0.16)" stroke="#b08d28" stroke-width="2.2" stroke-linejoin="round"/>`;
+  } else if(result.polygon && result.polygon.length===2){
+    const [a,b] = result.polygon;
+    svg += `<line x1="${sx(a.x)}" y1="${sy(a.y)}" x2="${sx(b.x)}" y2="${sy(b.y)}" stroke="#b08d28" stroke-width="3"/>`;
+  }
+
+  result.model.constraints.forEach((r,i)=>{
+    const colors = ['#14244a','#b08d28','#2a5a3a','#8a2a2a','#5b3a8a','#a05a14','#1a5c7a','#3a3a3a'];
+    const color = colors[i%colors.length];
+    let p1,p2;
+    if(Math.abs(r.a2)<EPS){
+      const x = r.b/r.a1;
+      p1={x,y:0}; p2={x,y:scale};
+    } else {
+      p1={x:0, y:r.b/r.a2};
+      p2={x:scale, y:(r.b - r.a1*scale)/r.a2};
+    }
+    svg += `<line x1="${sx(p1.x)}" y1="${sy(p1.y)}" x2="${sx(p2.x)}" y2="${sy(p2.y)}" stroke="${color}" stroke-width="2"/>`;
+    const midX = (p1.x+p2.x)/2;
+    const midY = (p1.y+p2.y)/2;
+    if(midX>=0 && midX<=scale && midY>=0 && midY<=scale){
+      svg += `<g transform="translate(${sx(midX)+10},${sy(midY)-10})">
+        <rect x="-2" y="-12" width="26" height="16" fill="${color}" rx="2"/>
+        <text x="11" y="-1" fill="#fafaf7" font-family="JetBrains Mono" font-size="10" font-weight="700" text-anchor="middle">R${i+1}</text>
+      </g>`;
+    }
+  });
+
+  if(result.optimal && result.status==='optimal'){
+    const Zopt = result.optimal.Z;
+    const c1 = result.model.c1, c2 = result.model.c2;
+    let p1,p2;
+    if(Math.abs(c2)<EPS){
+      const x = Zopt/c1;
+      p1={x,y:0}; p2={x,y:scale};
+    } else {
+      p1={x:0, y:Zopt/c2};
+      p2={x:scale, y:(Zopt - c1*scale)/c2};
+    }
+    svg += `<line x1="${sx(p1.x)}" y1="${sy(p1.y)}" x2="${sx(p2.x)}" y2="${sy(p2.y)}"
+            stroke="#b08d28" stroke-width="2.5" stroke-dasharray="8,5" opacity="0.75"/>`;
+  }
+
+  svg += `<g stroke="#14244a" stroke-width="2.2">
+    <line x1="${margin.left}" y1="${margin.top+plotH}" x2="${margin.left+plotW}" y2="${margin.top+plotH}"/>
+    <line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top+plotH}"/>
+  </g>`;
+
+  for(let v=0; v<=scale+EPS; v+=niceStep){
+    const lbl = +v.toFixed(2);
+    svg += `<line x1="${sx(v)}" y1="${margin.top+plotH}" x2="${sx(v)}" y2="${margin.top+plotH+5}" stroke="#14244a" stroke-width="1.5"/>`;
+    svg += `<line x1="${margin.left-5}" y1="${sy(v)}" x2="${margin.left}" y2="${sy(v)}" stroke="#14244a" stroke-width="1.5"/>`;
+    svg += `<text x="${sx(v)}" y="${margin.top+plotH+20}" font-family="JetBrains Mono" font-size="10" fill="#5b6478" text-anchor="middle" font-weight="500">${lbl}</text>`;
+    svg += `<text x="${margin.left-10}" y="${sy(v)+4}" font-family="JetBrains Mono" font-size="10" fill="#5b6478" text-anchor="end" font-weight="500">${lbl}</text>`;
+  }
+
+  svg += `<text x="${margin.left+plotW}" y="${margin.top+plotH+45}" font-family="Cormorant Garamond" font-style="italic" font-weight="600" font-size="20" fill="#14244a" text-anchor="end">x₁</text>`;
+  svg += `<text x="${margin.left-36}" y="${margin.top+12}" font-family="Cormorant Garamond" font-style="italic" font-weight="600" font-size="20" fill="#14244a">x₂</text>`;
+
+  result.feasible.forEach(p=>{
+    const isOpt = result.optimal && p===result.optimal;
+    const r = isOpt ? 9 : 5.5;
+    const fill = isOpt ? '#b08d28' : '#14244a';
+    svg += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="${r}" fill="${fill}" stroke="#fafaf7" stroke-width="2.5"/>`;
+    if(isOpt){
+      svg += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="16" fill="none" stroke="#b08d28" stroke-width="1.5" opacity="0.5"/>`;
+      svg += `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="22" fill="none" stroke="#b08d28" stroke-width="1" opacity="0.25"/>`;
+      svg += `<text x="${sx(p.x)+18}" y="${sy(p.y)-12}" font-family="Cormorant Garamond" font-style="italic" font-weight="600" font-size="16" fill="#b08d28">★ Óptimo</text>`;
+    }
+    svg += `<text x="${sx(p.x)+10}" y="${sy(p.y)+22}" font-family="JetBrains Mono" font-size="10" fill="#14244a" font-weight="600">(${p.x.toFixed(2)}, ${p.y.toFixed(2)})</text>`;
+  });
+
+  svg += `</svg>`;
+  return svg;
+}
+
+function renderResults(result){
+  const out = document.getElementById('results');
+
+  if(result.status==='infeasible'){
+    out.innerHTML = `<div class="error-msg">
+      <strong>Problema infactible</strong>
+      No existe ninguna combinación de (x₁, x₂) que satisfaga simultáneamente todas las restricciones junto con la no-negatividad. La región factible es vacía.
+    </div>`;
+    return;
+  }
+
+  const m = result.model;
+  const optTypeLabel = m.type==='max'?'Maximizar':'Minimizar';
+  const formula = `Z = ${m.c1}·x₁ ${m.c2>=0?'+':'−'} ${Math.abs(m.c2)}·x₂`;
+
+  let unboundedNote = '';
+  if(result.status==='unbounded'){
+    unboundedNote = `<div class="error-msg">
+      <strong>Solución ilimitada</strong>
+      La región factible es no acotada en la dirección del gradiente de Z; la función objetivo puede crecer/decrecer sin límite. Se muestra el mejor vértice como referencia.
+    </div>`;
+  }
+
+  const sortedVerts = [...result.feasible].sort((a,b)=>m.type==='max'?b.Z-a.Z:a.Z-b.Z);
+  const tableRows = sortedVerts.map((p,i)=>{
+    const isOpt = p===result.optimal;
+    return `<tr class="${isOpt?'optimal':''}">
+      <td>${String.fromCharCode(65+i)}</td>
+      <td>${p.x.toFixed(4)}</td>
+      <td>${p.y.toFixed(4)}</td>
+      <td>${m.c1}(${p.x.toFixed(2)}) ${m.c2>=0?'+':'−'} ${Math.abs(m.c2)}(${p.y.toFixed(2)})</td>
+      <td><strong>${p.Z.toFixed(4)}</strong></td>
+      <td>${isOpt?'★ ÓPTIMO':''}</td>
+    </tr>`;
+  }).join('');
+
+  out.innerHTML = `
+    <div class="results-grid">
+      ${unboundedNote}
+      <div class="verdict">
+        <div class="verdict-cell">
+          <div class="verdict-label">${optTypeLabel} · ${formula}</div>
+          <div class="verdict-value">Z* = <em>${result.optimal.Z.toFixed(4)}</em></div>
+        </div>
+        <div class="verdict-cell">
+          <div class="verdict-label">Punto óptimo (x₁*, x₂*)</div>
+          <div class="verdict-value">(${result.optimal.x.toFixed(3)}, ${result.optimal.y.toFixed(3)})</div>
+        </div>
+      </div>
+
+      <div class="graph-container">
+        ${renderPlot(result)}
+        <div class="legend">
+          <span><div class="swatch" style="background:rgba(176,141,40,0.16);border-color:#b08d28"></div>Región factible</span>
+          <span><div class="swatch" style="background:#14244a"></div>Vértice</span>
+          <span><div class="swatch" style="background:#b08d28"></div>Punto óptimo</span>
+          <span><div class="swatch" style="background:#fafaf7;border-style:dashed;border-color:#b08d28"></div>Línea isobeneficio Z*</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="section-label" style="color:#14244a;margin-bottom:12px;">Evaluación de los vértices</div>
+        <div class="vertices-table">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th><th>x₁</th><th>x₂</th><th>Sustitución en Z</th><th>Z</th><th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+        <p class="description-text">
+          Se generaron <strong>${result.feasible.length}</strong> vértices factibles a partir de las intersecciones de las restricciones y los ejes coordenados. La función objetivo fue evaluada en cada uno; el ${optTypeLabel.toLowerCase()} corresponde al vértice marcado con ★.
+        </p>
+      </div>
+    </div>`;
+}
+
+document.getElementById('solve-btn').addEventListener('click',()=>{
+  try{
+    const model = readModel();
+    const result = solve(model);
+    renderResults(result);
+  } catch(err){
+    document.getElementById('results').innerHTML =
+      `<div class="error-msg"><strong>Datos incompletos</strong>${err.message}</div>`;
+  }
+});
+
+document.getElementById('example-btn').addEventListener('click',()=>{
+  document.getElementById('opt-type').value = 'max';
+  document.getElementById('c1').value = 3;
+  document.getElementById('c2').value = 5;
+  document.getElementById('num-constraints').value = 3;
+  buildConstraints(3);
+  const cs = document.querySelectorAll('.constraint');
+  const set=(c,a1,a2,op,b)=>{
+    c.querySelector('.a1').value=a1;
+    c.querySelector('.a2').value=a2;
+    c.querySelector('.op-select').value=op;
+    c.querySelector('.bval').value=b;
+  };
+  set(cs[0],1,0,'<=',4);
+  set(cs[1],0,2,'<=',12);
+  set(cs[2],3,2,'<=',18);
+  document.getElementById('solve-btn').click();
+});
+
+buildConstraints(2);
+const cs0 = document.querySelectorAll('.constraint');
+cs0[0].querySelector('.a1').value=1;
+cs0[0].querySelector('.a2').value=0;
+cs0[0].querySelector('.op-select').value='<=';
+cs0[0].querySelector('.bval').value=4;
+cs0[1].querySelector('.a1').value=3;
+cs0[1].querySelector('.a2').value=2;
+cs0[1].querySelector('.op-select').value='<=';
+cs0[1].querySelector('.bval').value=18;
+</script>
+</body>
+</html>

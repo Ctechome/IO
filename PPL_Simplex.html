@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Método Simplex — Investigación de Operaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+   /*#fafaf7; --paper-2:#f2f0e8; --paper-3:#e8e5da;*/
+    --paper: #f8f6f1;
+    --paper-2: #efe9dc;
+    --paper-3: #d9d0bd;
+
+    --ink:#0a1628; 
+    /*--navy:#14244a; */
+    --navy: #11213f;
+    
+    --navy-light:#2a3a6e;
+    --gold:#b08d28; --gold-light:#d4ae47; --gold-soft:#e8d59a;
+    --muted:#5b6478; --grid:#d8d4c4;
+    --error:#8a2a2a; --success:#2a5a3a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,sans-serif;}
+  body{
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(20,36,74,0.04), transparent 50%),
+      radial-gradient(circle at 85% 90%, rgba(176,141,40,0.05), transparent 50%);
+    min-height:100vh;
+  }
+  header.masthead{
+    border-bottom:3px double var(--navy);
+    padding:32px 48px 26px;
+    display:grid;grid-template-columns:auto 1fr auto;
+    align-items:end;gap:36px;background:var(--paper);position:relative;
+  }
+  header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+  .brand{
+    font-family:'Cormorant Garamond',serif;font-weight:600;font-size:13px;
+    letter-spacing:0.22em;text-transform:uppercase;
+    border:1.5px solid var(--navy);padding:9px 16px;
+    background:var(--navy);color:var(--paper);
+  }
+  .title-block h1{
+    font-family:'Cormorant Garamond',serif;font-weight:400;
+    font-size:clamp(38px,5.5vw,62px);line-height:0.95;letter-spacing:-0.015em;color:var(--navy);
+  }
+  .title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+  .title-block .subtitle{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;
+    color:var(--muted);margin-top:10px;text-transform:uppercase;font-weight:500;
+  }
+  .meta{text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
+  .meta strong{color:var(--navy);display:block;font-size:11px;font-weight:600;}
+main{
+  display:flex;
+  flex-direction:column;
+  min-height:calc(100vh - 130px);
+}
+
+.panel-left{
+  border-right:none;
+  border-bottom:3px double var(--navy);
+  padding:28px 42px 34px;
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
+  overflow-x:auto;
+  overflow-y:visible;
+}
+.config-grid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(240px, 1fr));
+  gap:16px;
+  margin-bottom:28px;
+}
+.panel-right{
+  padding:36px 44px 60px;
+  background:var(--paper);
+  overflow-y:auto;
+}
+  @media(max-width:1100px){main{grid-template-columns:1fr;}.panel-left{border-right:none !important;border-bottom:3px double var(--navy);}}
+
+  .panel-left{
+    border-right:3px double var(--navy);padding:36px 32px 60px;
+    background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
+    overflow-y:auto;position:relative;
+  }
+  .panel-left::before{content:"";position:absolute;top:0;left:-1px;right:-1px;height:1px;background:var(--gold);}
+  .section-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:8px;
+    display:flex;align-items:center;gap:10px;font-weight:600;
+  }
+  .section-label::before{content:"§";font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);font-style:italic;}
+  .section-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:500;margin-bottom:22px;line-height:1.1;color:var(--navy);}
+  .config-row{display:flex;align-items:center;gap:14px;margin-bottom:16px;padding:16px 18px;background:var(--paper);border:1px solid var(--paper-3);border-left:3px solid var(--navy);}
+  .config-row label{font-size:14px;flex:1;font-weight:500;color:var(--navy);}
+  .config-row input,.config-row select{
+    font-family:'JetBrains Mono',monospace;font-size:13px;padding:8px 12px;
+    border:1.5px solid var(--navy);background:var(--paper);color:var(--navy);
+    width:100px;text-align:center;font-weight:600;
+  }
+  .config-row select{width:auto;cursor:pointer;}
+  .config-row input:focus,.config-row select:focus{outline:2px solid var(--gold);outline-offset:2px;}
+  .objective-block{
+    border:1.5px solid var(--navy);padding:22px 20px 18px;background:var(--paper);
+    margin:8px 0 26px;position:relative;box-shadow:3px 3px 0 var(--gold-soft);
+  }
+  .objective-block::before{
+    content:"Z";position:absolute;top:-16px;left:18px;
+    background:var(--gold);color:var(--paper);
+    font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:600;font-size:20px;
+    width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;box-shadow:0 2px 4px rgba(176,141,40,0.3);
+  }
+  .objective-row{
+  display:flex;
+  flex-wrap:nowrap;
+  align-items:center;
+  gap:6px;
+  overflow-x:auto;
+  padding-bottom:8px;
+}
+.constraint > div:last-child{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  align-items:center;
+  gap:5px;
+  overflow-x:auto;
+  padding-bottom:8px;
+}
+  .coef{
+    padding:7px 6px;border:1px solid var(--navy);background:var(--paper-2);text-align:center;
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--navy);font-weight:600;
+    transition:all 0.15s;width:54px;
+  }
+  .coef:focus{outline:none;border-color:var(--gold);background:#fff;box-shadow:0 0 0 2px var(--gold-soft);}
+  .var{font-style:italic;font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--navy);font-weight:500;text-align:center;}
+  .plus{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--navy);font-weight:700;text-align:center;}
+  .constraint{
+    border:1px solid var(--paper-3);border-left:3px solid var(--gold);
+    padding:14px 12px 12px 16px;background:var(--paper);margin-bottom:10px;
+    position:relative;transition:all 0.2s;
+  }
+  .constraint:hover{border-left-color:var(--navy);box-shadow:0 2px 8px rgba(20,36,74,0.06);}
+  .constraint .num{
+    position:absolute;left:-13px;top:14px;
+    background:var(--navy);color:var(--paper);
+    width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;border-radius:50%;
+    border:2px solid var(--paper);box-shadow:0 0 0 1px var(--navy);
+  }
+  .nonneg{
+    font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);
+    margin-top:18px;padding:12px 16px;background:rgba(20,36,74,0.04);
+    border:1px dashed var(--navy);text-align:center;letter-spacing:0.05em;
+  }
+  .nonneg em{font-style:italic;color:var(--navy);font-weight:700;font-family:'Cormorant Garamond',serif;font-size:14px;}
+  .solve-btn{
+    width:100%;margin-top:28px;padding:20px;
+    background:var(--navy);color:var(--paper);
+    font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;
+    letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+    transition:all 0.3s cubic-bezier(.4,0,.2,1);
+    border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);
+  }
+  .solve-btn::after{content:"→";margin-left:12px;display:inline-block;transition:transform 0.3s;color:var(--gold-light);}
+  .solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);}
+  .solve-btn:hover::after{transform:translateX(8px);color:var(--navy);}
+  .solve-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--gold);}
+  .example-btn{
+    width:100%;margin-top:12px;padding:11px;background:transparent;
+    border:1px dashed var(--navy);font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.12em;text-transform:uppercase;cursor:pointer;
+    color:var(--navy);font-weight:500;transition:all 0.2s;
+  }
+  .example-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+
+  .panel-right{padding:36px 44px 60px;background:var(--paper);overflow-y:auto;}
+
+  .verdict{
+    display:grid;grid-template-columns:1fr 1fr;gap:0;
+    border:2px solid var(--navy);background:var(--navy);color:var(--paper);
+    box-shadow:6px 6px 0 var(--gold);position:relative;margin-bottom:30px;
+  }
+  .verdict::before{content:"";position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:1px solid rgba(212,174,71,0.3);pointer-events:none;}
+  .verdict-cell{padding:28px 32px;position:relative;}
+  .verdict-cell:first-child{border-right:1px solid rgba(212,174,71,0.3);}
+  .verdict-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold-light);margin-bottom:8px;font-weight:600;}
+  .verdict-value{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,42px);font-weight:400;line-height:1.1;color:var(--paper);}
+  .verdict-value em{color:var(--gold-light);font-style:italic;font-weight:500;}
+
+  /* ====== ITERACIONES (formato VBA compacto) ====== */
+  .iter-block{
+    background:var(--paper);border:1.5px solid var(--navy);
+    margin-bottom:26px;box-shadow:5px 5px 0 var(--gold-soft);overflow:hidden;
+  }
+  .iter-header{
+    background:var(--navy);color:var(--paper);
+    padding:12px 22px;
+    display:flex;align-items:center;justify-content:space-between;
+    border-bottom:2px solid var(--gold);
+  }
+  .iter-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:22px;font-weight:500;}
+  .iter-title em{color:var(--gold-light);font-style:italic;}
+  .iter-tag{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;
+    background:var(--gold);color:var(--navy);padding:5px 12px;font-weight:700;text-transform:uppercase;
+  }
+  .iter-tag.optimal{background:var(--success);color:var(--paper);}
+  .iter-tag.error{background:var(--error);color:var(--paper);}
+  .iter-body{padding:20px 22px;}
+
+  .vba-table-wrap{overflow-x:auto;border:1.5px solid var(--navy);margin-bottom:14px;background:var(--paper);}
+  .vba-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:12.5px;}
+  .vba-table th{
+    background:var(--navy);color:var(--paper);padding:9px 10px;
+    text-align:center;font-weight:600;font-size:11px;letter-spacing:0.06em;
+    border-right:1px solid rgba(212,174,71,0.3);border-bottom:2px solid var(--gold);
+    white-space:nowrap;
+  }
+  .vba-table th.col-base{background:var(--navy-light);width:55px;}
+  .vba-table th.col-sol{background:var(--gold-soft);color:var(--navy);border-left:2px solid var(--navy);}
+  .vba-table td{
+    padding:8px 10px;border-bottom:1px solid var(--paper-3);border-right:1px solid var(--paper-3);
+    text-align:center;color:var(--ink);font-weight:500;background:var(--paper);white-space:nowrap;
+  }
+  .vba-table td.cell-base{
+    background:var(--paper-2);font-style:italic;
+    font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:var(--navy);
+  }
+  .vba-table td.cell-z{
+    background:var(--navy);color:var(--paper);font-weight:700;font-size:13px;
+    border-bottom:2px solid var(--gold);
+  }
+/* ===== COLUMNA PIVOTE ===== */
+.vba-table td.pivot-col{
+  background:rgba(52, 89, 149, 0.18) !important;
+  border-left:2px dashed var(--navy);
+  border-right:2px dashed var(--navy);
+  color:var(--ink) !important;
+  font-weight:700;
+}
+
+.vba-table th.pivot-col{
+  background:#d4ae47 !important;
+  color:#0a1628 !important;
+  font-weight:800;
+}
+
+/* ===== RENGLÓN PIVOTE ===== */
+.vba-table tr.pivot-row td{
+  background:rgba(212,174,71,0.22) !important;
+  color:var(--ink) !important;
+  font-weight:700;
+}
+
+/* ===== ELEMENTO PIVOTE ===== */
+.vba-table td.pivot-cell{
+  background:#ffcc33 !important;
+  color:#000 !important;
+  font-weight:900;
+  font-size:15px;
+  border:3px solid var(--navy) !important;
+  box-shadow:
+      0 0 0 2px white inset,
+      0 0 12px rgba(255,204,51,0.7);
+}
+
+/* ===== VARIABLE BÁSICA DEL RENGLÓN PIVOTE ===== */
+.vba-table tr.pivot-row td.cell-base{
+  background:#b08d28 !important;
+  color:white !important;
+  font-weight:900;
+}
+
+  .ratio-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;background:var(--paper-2);border:1px solid var(--navy);padding:2px 8px;margin:2px 4px 2px 0;color:var(--navy);}
+  .ratio-tag.min{background:var(--gold);color:var(--paper);font-weight:700;}
+
+  .pivot-analysis{
+    background:var(--paper-2);border-left:3px solid var(--gold);
+    padding:14px 18px;margin:12px 0;font-size:13px;line-height:1.65;color:var(--ink);
+  }
+  .pivot-analysis .row-line{margin:5px 0;}
+  .pivot-analysis .label-tag{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--gold);text-transform:uppercase;font-weight:700;margin-right:8px;}
+  .pivot-analysis code{font-family:'JetBrains Mono',monospace;background:var(--paper);padding:2px 8px;border:1px solid var(--paper-3);color:var(--navy);font-weight:600;font-size:12px;}
+  .pivot-analysis strong{color:var(--navy);font-weight:700;}
+
+  .coef-M{color:var(--error);font-style:italic;font-weight:700;}
+
+  .empty-state{text-align:center;padding:90px 20px;color:var(--muted);}
+  .empty-state .icon{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:140px;line-height:1;color:var(--gold);opacity:0.35;margin-bottom:24px;font-weight:300;}
+  .empty-state h3{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:500;color:var(--navy);margin-bottom:10px;}
+  .empty-state p{font-size:14px;line-height:1.7;max-width:460px;margin:0 auto;color:var(--muted);}
+  .empty-state strong{color:var(--navy);}
+
+  .error-msg{border:2px solid var(--error);background:rgba(138,42,42,0.05);padding:18px 22px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;}
+  .error-msg strong{color:var(--error);font-family:'Cormorant Garamond',serif;font-size:17px;display:block;margin-bottom:6px;font-weight:600;}
+
+  .final-solution{background:var(--paper-2);border:1.5px solid var(--navy);padding:22px 26px;margin-top:18px;box-shadow:4px 4px 0 var(--gold-soft);}
+  .final-solution h4{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:500;color:var(--navy);margin-bottom:12px;border-bottom:1px solid var(--gold);padding-bottom:8px;}
+  .vars-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:10px;}
+.var-card{
+  background:var(--paper);
+  border:1px solid var(--paper-3);
+  border-left:4px solid var(--gold);
+  padding:14px 18px;
+
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+
+  font-family:'JetBrains Mono',monospace;
+
+  min-height:70px;
+}
+
+.var-card .name{
+  font-style:italic;
+  font-family:'Cormorant Garamond',serif;
+  font-size:24px;
+  color:var(--navy);
+  font-weight:700;
+  white-space:nowrap;
+}
+
+.var-card .val{
+  font-size:22px;
+  color:var(--ink);
+  font-weight:800;
+  white-space:nowrap;
+}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+  .iter-block{animation:fadeInUp 0.5s cubic-bezier(.4,0,.2,1) backwards;}
+
+  footer{
+    border-top:3px double var(--navy);padding:20px 48px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);
+    display:flex;justify-content:space-between;background:var(--paper);position:relative;
+  }
+  footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+
+  /* ====== LAYOUT: panel de operaciones a la izquierda + tabla ====== */
+  .vba-table-layout{
+    display:flex;
+    align-items:stretch;
+    gap:0;
+    margin-bottom:14px;
+    overflow-x:auto;
+  }
+  .ops-panel{
+    flex:0 0 auto;
+    min-width:170px;
+    max-width:220px;
+    background:var(--paper-2);
+    border:1.5px solid var(--navy);
+    border-right:none;
+    display:flex;
+    flex-direction:column;
+    font-family:'JetBrains Mono',monospace;
+  }
+  .ops-header{
+    background:var(--gold);
+    color:var(--navy);
+    text-align:center;
+    padding:9px 12px;
+    font-weight:600;font-size:11px;letter-spacing:0.06em;
+    border-bottom:2px solid var(--gold);
+    box-sizing:border-box;
+    line-height:1.2;
+    text-transform:uppercase;
+    /* Coincide con thead: padding 9px·2 + 11px line-height + 2px border = ~32px */
+  }
+  .ops-row{
+    flex:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:8px 14px;
+    text-align:center;
+    border-bottom:1px solid var(--paper-3);
+    color:var(--navy);
+    font-weight:500;
+    font-size:12.5px;
+    background:var(--paper-2);
+    box-sizing:border-box;
+    line-height:1.2;
+    /* La altura final la define flex:1 y debe coincidir con la fila de la tabla,
+       cuyo padding es 8px·2 + line-height de 12.5px ≈ 31-33px */
+  }
+  .ops-row:last-child{border-bottom:none;}
+  .ops-row-z{
+    background:var(--navy);
+    color:var(--paper);
+    font-weight:600;
+    border-bottom:2px solid var(--gold);
+  }
+  .ops-row-z strong{color:var(--gold-light);}
+  .ops-row strong{color:var(--navy);font-weight:700;}
+  .ops-row-pivot{
+    background:rgba(176,141,40,0.18) !important;
+  }
+  /* La tabla dentro del layout no debe llevar margen-bottom propio */
+  .vba-table-layout .vba-table-wrap{margin-bottom:0;flex:1 1 auto;min-width:0;}
+
+  @media(max-width:900px){
+    .vba-table-layout{flex-direction:column;}
+    .ops-panel{
+      max-width:none;min-width:0;
+      border-right:1.5px solid var(--navy);
+      border-bottom:none;
+    }
+    .vba-table-layout .vba-table-wrap{border-top:0;}
+  }
+
+  .panel-left::-webkit-scrollbar,.panel-right::-webkit-scrollbar{width:8px;}
+  .panel-left::-webkit-scrollbar-track,.panel-right::-webkit-scrollbar-track{background:var(--paper-2);}
+  .panel-left::-webkit-scrollbar-thumb,.panel-right::-webkit-scrollbar-thumb{background:var(--navy);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="brand">IO · MÉTODO SIMPLEX</div>
+  <div class="title-block">
+    <h1>Método <em>Simplex</em></h1>
+    <div class="subtitle">Solución de Problemas de Programación Lineal</div>
+  </div>
+  <div class="meta">
+    <strong>Investigación de Operaciones</strong>
+    Dr. Carlos Miguel López Martínez· Oaxaca<br>
+    Edición Académica · 2026
+  </div>
+</header>
+
+<main>
+  <section class="panel-left">
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Definir el modelo</h2>
+
+   <div class="config-grid">
+  <div class="config-row">
+    <label>Tipo de optimización</label>
+    <select id="opt-type">
+      <option value="max">Maximizar</option>
+      <option value="min">Minimizar</option>
+    </select>
+  </div>
+
+  <div class="config-row">
+    <label>Número de variables</label>
+    <input type="number" id="num-vars" min="2" max="8" value="2"/>
+  </div>
+
+  <div class="config-row">
+    <label>Número de restricciones</label>
+    <input type="number" id="num-constraints" min="1" max="10" value="3"/>
+  </div>
+</div>
+
+    <div class="section-label" style="margin-top:30px;">Función objetivo</div>
+    <div class="objective-block">
+      <div id="objective-row" class="objective-row"></div>
+    </div>
+
+    <div class="section-label">Restricciones</div>
+    <div id="constraints-container" style="margin-top:6px;"></div>
+
+    <div class="nonneg">
+      <em>x₁, x₂, … , xₙ ≥ 0</em> &nbsp;·&nbsp; (no negatividad)
+    </div>
+
+    <button class="solve-btn" id="solve-btn">Resolver</button>
+    <button class="example-btn" id="example-btn">↻ Cargar ejemplo VBA</button>
+  </section>
+
+  <section class="panel-right">
+    <div id="results">
+      <div class="empty-state">
+        <div class="icon">∑</div>
+        <h3>Esperando el modelo</h3>
+        <p>Configure el modelo y pulse <strong>Resolver</strong>. Cada iteración mostrará la tabla simplex completa con la <strong>operación de fila aplicada</strong> al inicio de cada renglón.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Método Simplex · Dr. Carlos Miguel López Martínez. Mayo 2026</div>
+  <div>x₁, x₂, … , xₙ ∈ ℝ⁺</div>
+</footer>
+
+<script>
+const M = 1e7;
+const EPS = 1e-9;
+
+const numVarsInput = document.getElementById('num-vars');
+const numConstraintsInput = document.getElementById('num-constraints');
+const objectiveRow = document.getElementById('objective-row');
+const constraintsContainer = document.getElementById('constraints-container');
+
+function buildObjective(n){
+  const prev = [...objectiveRow.querySelectorAll('.obj-c')].map(i=>i.value);
+  let html = `<span class="var" style="margin-right:6px;">Z =</span>`;
+  for(let i=0;i<n;i++){
+    const v = prev[i] !== undefined ? prev[i] : (i===0?'50':(i===1?'40':'1'));
+    if(i>0) html += `<span class="plus">+</span>`;
+    html += `<input type="number" step="any" class="coef obj-c" value="${v}" data-idx="${i}"/>`;
+    html += `<span class="var">x<sub>${i+1}</sub></span>`;
+  }
+  objectiveRow.innerHTML = html;
+}
+
+function buildConstraints(numC, numV){
+  const prev = [...constraintsContainer.querySelectorAll('.constraint')].map(c=>{
+    const coefs = [...c.querySelectorAll('.cstr-c')].map(i=>i.value);
+    return {coefs, op: c.querySelector('.op-select').value, b: c.querySelector('.bval').value};
+  });
+  constraintsContainer.innerHTML = '';
+  for(let i=0;i<numC;i++){
+    const old = prev[i] || {coefs:[],op:'<=',b:''};
+    const div = document.createElement('div');
+    div.className = 'constraint';
+    let inner = `<div class="num">${i+1}</div><div style="display:flex;flex-wrap:wrap;align-items:center;gap:5px;">`;
+    for(let j=0;j<numV;j++){
+      const v = old.coefs[j] !== undefined ? old.coefs[j] : '';
+      if(j>0) inner += `<span class="plus">+</span>`;
+      inner += `<input type="number" step="any" class="coef cstr-c" value="${v}" data-idx="${j}"/>`;
+      inner += `<span class="var">x<sub>${j+1}</sub></span>`;
+    }
+    inner += `
+      <select class="op-select coef" style="width:48px;">
+        <option value="<=" ${old.op==='<='?'selected':''}>≤</option>
+        <option value=">=" ${old.op==='>='?'selected':''}>≥</option>
+        <option value="="  ${old.op==='='?'selected':''}>=</option>
+      </select>
+      <input type="number" step="any" class="coef bval" value="${old.b}" placeholder="b" style="width:60px;"/>
+    </div>`;
+    div.innerHTML = inner;
+    constraintsContainer.appendChild(div);
+  }
+}
+
+numVarsInput.addEventListener('change',()=>{
+  let n = parseInt(numVarsInput.value);
+  if(isNaN(n)||n<2) n=2; if(n>8) n=8; numVarsInput.value = n;
+  buildObjective(n); buildConstraints(parseInt(numConstraintsInput.value), n);
+});
+numConstraintsInput.addEventListener('change',()=>{
+  let n = parseInt(numConstraintsInput.value);
+  if(isNaN(n)||n<1) n=1; if(n>10) n=10; numConstraintsInput.value = n;
+  buildConstraints(n, parseInt(numVarsInput.value));
+});
+
+function readModel(){
+  const type = document.getElementById('opt-type').value;
+  const numV = parseInt(numVarsInput.value);
+  const numC = parseInt(numConstraintsInput.value);
+  const c = [...objectiveRow.querySelectorAll('.obj-c')].map(i=>parseFloat(i.value));
+  if(c.some(v=>isNaN(v))) throw new Error('La función objetivo tiene coeficientes inválidos.');
+  const constraints = [];
+  document.querySelectorAll('.constraint').forEach((row,i)=>{
+    const a = [...row.querySelectorAll('.cstr-c')].map(i=>parseFloat(i.value));
+    const op = row.querySelector('.op-select').value;
+    const b  = parseFloat(row.querySelector('.bval').value);
+    if(a.some(v=>isNaN(v))||isNaN(b)) throw new Error(`La restricción #${i+1} tiene valores incompletos.`);
+    constraints.push({a,op,b,id:i+1});
+  });
+  return {type,c,constraints,numV,numC};
+}
+
+function buildInitialTableau(model){
+  const isMin = model.type === 'min';
+  const cWork = isMin ? model.c.map(v=>-v) : [...model.c];
+  const norm = model.constraints.map(r=>{
+    let a = [...r.a]; let op = r.op; let b = r.b;
+    if(b < 0){ a = a.map(v=>-v); b = -b; if(op === '<=') op = '>='; else if(op === '>=') op = '<='; }
+    return {a,op,b};
+  });
+  const n = model.numV; const m = norm.length;
+  const auxVars = []; const cstrAux = [];
+  let sCount=0, eCount=0, aCount=0;
+  norm.forEach((r,i)=>{
+    const idx = [];
+    if(r.op === '<='){
+      sCount++;
+      auxVars.push({type:'s',cstr:i,label:`S${sCount}`});
+      idx.push({type:'s',pos:auxVars.length-1});
+    } else if(r.op === '>='){
+      eCount++;
+      auxVars.push({type:'e',cstr:i,label:`h${eCount}`});
+      idx.push({type:'e',pos:auxVars.length-1});
+      aCount++;
+      auxVars.push({type:'a',cstr:i,label:`A${aCount}`});
+      idx.push({type:'a',pos:auxVars.length-1});
+    } else {
+      aCount++;
+      auxVars.push({type:'a',cstr:i,label:`A${aCount}`});
+      idx.push({type:'a',pos:auxVars.length-1});
+    }
+    cstrAux.push(idx);
+  });
+  const totalAux = auxVars.length; const totalCols = n + totalAux;
+  const A = []; const b = [];
+  for(let i=0;i<m;i++){
+    const row = new Array(totalCols).fill(0);
+    for(let j=0;j<n;j++) row[j] = norm[i].a[j];
+    cstrAux[i].forEach(info=>{
+      const col = n + info.pos;
+      if(info.type === 's') row[col] = 1;
+      else if(info.type === 'e') row[col] = -1;
+      else if(info.type === 'a') row[col] = 1;
+    });
+    A.push(row); b.push(norm[i].b);
+  }
+  const Zrow = new Array(totalCols).fill(0);
+  for(let j=0;j<n;j++) Zrow[j] = -cWork[j];
+  auxVars.forEach((av,k)=>{ if(av.type === 'a') Zrow[n+k] = M; });
+  let Zval = 0;
+  const colNames = [];
+  for(let j=0;j<n;j++) colNames.push(`x${j+1}`);
+  auxVars.forEach(av => colNames.push(av.label));
+  const basis = [];
+  for(let i=0;i<m;i++){
+    const auxList = cstrAux[i];
+    const art = auxList.find(x=>x.type==='a');
+    const slk = auxList.find(x=>x.type==='s');
+    if(art) basis.push(n + art.pos);
+    else basis.push(n + slk.pos);
+  }
+  return {Zrow, Zval, A, b, basis, colNames, n, m, totalCols, auxVars, isMin};
+}
+
+function reduceMFromZRow(tab){
+  const {basis, n, auxVars, totalCols, m, colNames} = tab;
+  const ops = [];
+  for(let i=0;i<m;i++){
+    if(basis[i] >= n){
+      const av = auxVars[basis[i]-n];
+      if(av && av.type === 'a'){
+        for(let j=0;j<totalCols;j++){
+          tab.Zrow[j] = tab.Zrow[j] - M * tab.A[i][j];
+        }
+        tab.Zval = tab.Zval - M * tab.b[i];
+        const artLabel = colNames[basis[i]].replace(/(\D+)(\d+)/, '$1<sub>$2</sub>');
+        ops.push(`<strong>−M ${artLabel}</strong> + Z`);
+      }
+    }
+  }
+  return ops;
+}
+
+function fmtNum(v){
+  if(Math.abs(v) < 1e-7) return '0';
+  if(Math.abs(v) >= M*0.5){
+    const k = v / M;
+    const kr = Math.round(k*100)/100;
+    const rest = v - kr*M;
+    let s = '';
+    if(Math.abs(kr - 1) < 1e-6) s = '<span class="coef-M">M</span>';
+    else if(Math.abs(kr + 1) < 1e-6) s = '<span class="coef-M">−M</span>';
+    else s = `<span class="coef-M">${kr.toFixed(2)}M</span>`;
+    if(Math.abs(rest) > 0.01) s += rest>0 ? ` + ${formatFraction(rest)}` : ` − ${formatFraction(Math.abs(rest))}`;
+    return s;
+  }
+  return formatFraction(v);
+}
+
+function formatFraction(v){
+  const sign = v < 0 ? '−' : '';
+  const x = Math.abs(v);
+  if(Math.abs(x - Math.round(x)) < 1e-7) return sign + Math.round(x).toString();
+  const denoms = [2,3,4,5,6,8,10,12,16];
+  for(const d of denoms){
+    const num = x * d;
+    if(Math.abs(num - Math.round(num)) < 1e-6){
+      const numI = Math.round(num);
+      const whole = Math.floor(numI / d);
+      const frac = numI % d;
+      if(frac === 0) return sign + whole.toString();
+      if(whole === 0) return sign + `${frac}/${d}`;
+      return sign + `${whole} ${frac}/${d}`;
+    }
+  }
+  return sign + x.toFixed(3);
+}
+
+function runSimplex(model){
+  const tab = buildInitialTableau(model);
+  const iterations = [];
+  const MAX_ITER = 50;
+
+  iterations.push({
+    type:'initial',
+    tab: cloneTab(tab),
+    rowOps: ['—'].concat(tab.basis.map(()=>'—')),
+    note:'Tabla inicial. Las variables artificiales con coeficiente <em>M</em> en la fila Z se reducen antes de iterar.'
+  });
+
+  const reductionOps = reduceMFromZRow(tab);
+  if(reductionOps.length > 0){
+    iterations.push({
+      type:'reduction',
+      tab: cloneTab(tab),
+      rowOps: [reductionOps.join('<br>')].concat(tab.basis.map(()=>'—')),
+      note:'Fila Z reducida: se eliminó la <em>M</em> asociada a las variables artificiales en la base.'
+    });
+  }
+
+  for(let it=0; it<MAX_ITER; it++){
+    let pivotCol = -1; let mostNeg = -EPS;
+    for(let j=0;j<tab.totalCols;j++){
+      if(tab.Zrow[j] < mostNeg){ mostNeg = tab.Zrow[j]; pivotCol = j; }
+    }
+    if(pivotCol === -1){
+      iterations.push({
+        type:'final',
+        tab: cloneTab(tab),
+        rowOps: ['—'].concat(tab.basis.map(()=>'—'))
+      });
+      break;
+    }
+
+    let minRatio = Infinity; let pivotRow = -1;
+    const ratios = [];
+    for(let i=0;i<tab.m;i++){
+      const aij = tab.A[i][pivotCol];
+      if(aij > EPS){
+        const r = tab.b[i] / aij;
+        ratios.push({value:r, isMin:false});
+        if(r < minRatio - EPS){ minRatio = r; pivotRow = i; }
+      } else { ratios.push({value:null, isMin:false}); }
+    }
+    if(pivotRow === -1){
+      iterations.push({
+        type:'unbounded', tab: cloneTab(tab), enteringCol: pivotCol,
+        ratios, rowOps: ['—'].concat(tab.basis.map(()=>'—')),
+        note:'La columna pivote no tiene elementos positivos: solución no acotada.'
+      });
+      return {iterations, status:'unbounded', tab};
+    }
+    ratios[pivotRow].isMin = true;
+
+    const preSnapshot = cloneTab(tab);
+    const enteringVar = tab.colNames[pivotCol];
+    const leavingVar = tab.colNames[tab.basis[pivotRow]];
+    const pivotElement = tab.A[pivotRow][pivotCol];
+
+    const pivotInfo = applyPivot(tab, pivotRow, pivotCol);
+
+    const rowOps = [];
+    rowOps.push(pivotInfo.opZ);
+    for(let i=0;i<tab.m;i++){
+      if(i === pivotRow) rowOps.push(pivotInfo.opPivotRow);
+      else {
+        const idx = pivotInfo.otherOps.findIndex(o=>o.row===i);
+        rowOps.push(idx >= 0 ? pivotInfo.otherOps[idx].desc : '— (sin cambio)');
+      }
+    }
+
+    iterations.push({
+      type:'iteration', iterNum: it+1,
+      preTab: preSnapshot, tab: cloneTab(tab),
+      enteringCol: pivotCol, leavingRow: pivotRow, ratios,
+      enteringVar, leavingVar, pivotElement, rowOps
+    });
+  }
+
+  for(let i=0;i<tab.m;i++){
+    if(tab.basis[i] >= tab.n){
+      const av = tab.auxVars[tab.basis[i] - tab.n];
+      if(av && av.type === 'a' && tab.b[i] > 1e-5){
+        return {iterations, status:'infeasible', tab,
+                infeasibleVar: tab.colNames[tab.basis[i]], infeasibleVal: tab.b[i]};
+      }
+    }
+  }
+  return {iterations, status:'optimal', tab};
+}
+
+/* ====== FORMATO COMPACTO ESTILO VBA DEL DR. CARLOS MIGUEL ======
+   - Fila pivote:        "{var_entrante}/{pivote}   {var_entrante}"
+                         (significa: R_pivote ÷ pivote, y la nueva variable básica)
+   - Filas no pivote:    "{−factor} {var_entrante} + {var_actual}"
+                         (significa: R_actual + (−factor)·R_pivote' = R_nuevo)
+   - Fila Z:             "{−zFactor} {var_entrante} + Z"
+   El factor mostrado es el OPUESTO del coeficiente original, porque la
+   operación es R_i + (−factor)·R_pivote' (suma, no resta).
+================================================================ */
+function formatOpCompact(coef, enteringVarLabel, currentVarLabel){
+  // coef = el multiplicador que va delante de la variable entrante
+  // currentVarLabel = etiqueta de la variable básica del renglón (Z, S1, x2, A1, etc.)
+  const enteringFmt = enteringVarLabel.replace(/(\D+)(\d+)/, '$1<sub>$2</sub>');
+  const currentFmt = currentVarLabel.replace(/(\D+)(\d+)/, '$1<sub>$2</sub>');
+
+  if(Math.abs(coef) < EPS){
+    // Coeficiente cero: la fila no cambia, mostrar solo la variable básica
+    return `<strong>${currentFmt}</strong>`;
+  }
+  // Si coef = 1, omitirlo; si coef = -1, mostrar solo "−"
+  let coefStr = '';
+  const sign = coef < 0 ? '−' : '';
+  const absC = Math.abs(coef);
+  if(Math.abs(absC - 1) < EPS){
+    coefStr = sign;  // "" para +1, "−" para −1
+  } else {
+    coefStr = sign + formatFractionPlain(absC);
+  }
+
+  return `<strong>${coefStr}${enteringFmt}</strong> + ${currentFmt}`;
+}
+
+// Versión sin signo HTML (para concatenar manualmente)
+function formatFractionPlain(v){
+  const x = Math.abs(v);
+  if(Math.abs(x - Math.round(x)) < 1e-7) return Math.round(x).toString();
+  const denoms = [2,3,4,5,6,8,10,12,16];
+  for(const d of denoms){
+    const num = x * d;
+    if(Math.abs(num - Math.round(num)) < 1e-6){
+      const numI = Math.round(num);
+      const whole = Math.floor(numI / d);
+      const frac = numI % d;
+      if(frac === 0) return whole.toString();
+      if(whole === 0) return `${frac}/${d}`;
+      return `${whole} ${frac}/${d}`;
+    }
+  }
+  return x.toFixed(3);
+}
+
+function applyPivot(tab, pr, pc){
+  const pivotElement = tab.A[pr][pc];
+  const enteringLabel = tab.colNames[pc];     // ej. "x2"
+  const enteringFmt = enteringLabel.replace(/(\D+)(\d+)/, '$1<sub>$2</sub>');
+
+  const oldRow = [...tab.A[pr]]; const oldB = tab.b[pr];
+  const newPivotRow = oldRow.map(v => v / pivotElement);
+  const newPivotB = oldB / pivotElement;
+  tab.A[pr] = newPivotRow; tab.b[pr] = newPivotB;
+
+  // Fila pivote: solo "x2/3" (la división); si pivote = 1, solo "x2"
+  let opPivotRow;
+  if(Math.abs(pivotElement - 1) < EPS){
+    opPivotRow = `<strong>${enteringFmt}</strong>`;
+  } else if(Math.abs(pivotElement + 1) < EPS){
+    opPivotRow = `<strong>−${enteringFmt}</strong>`;
+  } else {
+    opPivotRow = `<strong>${enteringFmt}/${formatFractionPlain(pivotElement)}</strong>`;
+  }
+
+  // Otras filas: formato "{-factor} x2 + S1"
+  const otherOps = [];
+  for(let i=0;i<tab.m;i++){
+    if(i === pr) continue;
+    const factor = tab.A[i][pc];     // coeficiente actual de la columna pivote
+    const currentVarLabel = tab.colNames[tab.basis[i]];
+    // La operación es: R_i' = R_i + (−factor)·R_pivote'
+    const desc = formatOpCompact(-factor, enteringLabel, currentVarLabel);
+    if(Math.abs(factor) >= EPS){
+      tab.A[i] = tab.A[i].map((v,j) => v - factor * newPivotRow[j]);
+      tab.b[i] = tab.b[i] - factor * newPivotB;
+    }
+    otherOps.push({row:i, desc});
+  }
+
+  // Fila Z: formato "10040 x2 + Z"
+  const zFactor = tab.Zrow[pc];
+  let opZ;
+  if(Math.abs(zFactor) < EPS){
+    opZ = `<strong>Z</strong>`;
+  } else {
+    // Operación: Z' = Z + (−zFactor)·R_pivote'
+    opZ = formatOpCompact(-zFactor, enteringLabel, 'Z');
+    tab.Zrow = tab.Zrow.map((v,j) => v - zFactor * newPivotRow[j]);
+    tab.Zval = tab.Zval - zFactor * newPivotB;
+  }
+
+  tab.basis[pr] = pc;
+  return {opZ, opPivotRow, otherOps, pivotElement};
+}
+
+function cloneTab(tab){
+  return {
+    Zrow: [...tab.Zrow], Zval: tab.Zval,
+    A: tab.A.map(r=>[...r]), b: [...tab.b],
+    basis: [...tab.basis], colNames: [...tab.colNames],
+    n: tab.n, m: tab.m, totalCols: tab.totalCols,
+    auxVars: tab.auxVars, isMin: tab.isMin
+  };
+}
+
+function renderResults(model, simplex){
+  const out = document.getElementById('results');
+  let html = '';
+
+  if(simplex.status === 'optimal'){
+    const finalTab = simplex.tab;
+    let Zopt = finalTab.Zval;
+    if(model.type === 'min') Zopt = -Zopt;
+    const xVals = new Array(model.numV).fill(0);
+    for(let i=0;i<finalTab.basis.length;i++){
+      if(finalTab.basis[i] < model.numV) xVals[finalTab.basis[i]] = finalTab.b[i];
+    }
+    const optLabel = model.type==='max'?'Maximizar':'Minimizar';
+    let formula = 'Z = ';
+    model.c.forEach((ci,i)=>{
+      if(i>0) formula += ci>=0 ? ' + ' : ' − ';
+      formula += `${i===0&&ci<0?'−':''}${Math.abs(ci)}·x${i+1}`;
+    });
+    const numIter = simplex.iterations.filter(x=>x.type==='iteration').length;
+    html += `<div class="verdict">
+      <div class="verdict-cell">
+        <div class="verdict-label">${optLabel} · ${formula}</div>
+        <div class="verdict-value">Z* = <em>${formatFraction(Zopt)}</em></div>
+      </div>
+      <div class="verdict-cell">
+        <div class="verdict-label">Iteraciones (pivotes)</div>
+        <div class="verdict-value">${numIter}</div>
+      </div>
+    </div>`;
+    html += `<div class="final-solution">
+      <h4>Solución óptima — Variables de decisión</h4>
+      <div class="vars-grid">`;
+    xVals.forEach((v,i)=>{
+      html += `<div class="var-card">
+        <div class="name">x<sub>${i+1}</sub><sup>*</sup></div>
+        <div class="val">= ${formatFraction(v)}</div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  } else if(simplex.status === 'infeasible'){
+    html += `<div class="error-msg">
+      <strong>Problema infactible</strong>
+      Al alcanzar la condición de optimalidad, la artificial <code>${simplex.infeasibleVar}</code> permanece en la base con valor ${formatFraction(simplex.infeasibleVal)} > 0. El sistema de restricciones es inconsistente.
+    </div>`;
+  } else if(simplex.status === 'unbounded'){
+    html += `<div class="error-msg">
+      <strong>Solución no acotada</strong>
+      La función objetivo puede crecer/decrecer sin límite dentro de la región factible.
+    </div>`;
+  }
+
+  html += `<div class="section-label" style="color:var(--navy);font-size:11px;margin:30px 0 14px;">Desarrollo paso a paso</div>`;
+  simplex.iterations.forEach((iter, idx) => { html += renderIterBlock(iter, idx); });
+  out.innerHTML = html;
+}
+
+function renderIterBlock(iter, idx){
+  let title, tag, tagClass='';
+  if(iter.type === 'initial'){ title = `Tabla <em>inicial</em>`; tag = 'INICIAL'; }
+  else if(iter.type === 'reduction'){ title = `Reducción de <em>M</em> en fila Z`; tag = 'PREPARACIÓN'; }
+  else if(iter.type === 'iteration'){
+    title = `Iteración <em>${iter.iterNum}</em>`;
+    tag = `${iter.enteringVar.toUpperCase()} → ${iter.leavingVar.toUpperCase()}`;
+  }
+  else if(iter.type === 'final'){ title = `Tabla <em>final</em>`; tag = '★ ÓPTIMO'; tagClass = 'optimal'; }
+  else if(iter.type === 'unbounded'){ title = `Iteración no acotada`; tag = 'NO ACOTADA'; tagClass = 'error'; }
+
+  let html = `<div class="iter-block">
+    <div class="iter-header">
+      <div class="iter-title">${title}</div>
+      <div class="iter-tag ${tagClass}">${tag}</div>
+    </div><div class="iter-body">`;
+
+  if(iter.type === 'iteration'){
+    html += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:0.18em;text-transform:uppercase;font-weight:700;margin-bottom:8px;">▸ Selección de pivote (estado previo)</div>`;
+    html += renderTable(iter.preTab, iter.enteringCol, iter.leavingRow, iter.ratios, null);
+
+    html += `<div class="pivot-analysis">
+      <div class="row-line"><span class="label-tag">▸ Variable entrante:</span>
+        Columna con valor más negativo en fila Z &nbsp;⇒&nbsp;
+        <strong>entra</strong> <code>${iter.enteringVar.replace(/(\D+)(\d+)/,'$1<sub>$2</sub>')}</code>
+        (Z<sub>${iter.enteringCol+1}</sub> = ${formatFraction(iter.preTab.Zrow[iter.enteringCol])})
+      </div>
+      <div class="row-line"><span class="label-tag">▸ Razón mínima:</span>`;
+    iter.ratios.forEach((r,i)=>{
+      if(r.value !== null){
+        const cls = r.isMin ? 'ratio-tag min' : 'ratio-tag';
+        html += `<span class="${cls}">R${i+1}: ${formatFraction(iter.preTab.b[i])} / ${formatFraction(iter.preTab.A[i][iter.enteringCol])} = ${formatFraction(r.value)}</span>`;
+      } else {
+        html += `<span class="ratio-tag">R${i+1}: descartada</span>`;
+      }
+    });
+    html += `</div>
+      <div class="row-line"><span class="label-tag">▸ Variable saliente:</span>
+        <strong>sale</strong> <code>${iter.leavingVar.replace(/(\D+)(\d+)/,'$1<sub>$2</sub>')}</code>
+        &nbsp;|&nbsp; <strong>elemento pivote</strong> = <code>${formatFraction(iter.pivotElement)}</code>
+      </div>
+    </div>`;
+
+    html += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:0.18em;text-transform:uppercase;font-weight:700;margin:14px 0 8px;">▸ Resultado tras aplicar las operaciones de fila</div>`;
+    html += renderTable(iter.tab, null, null, null, iter.rowOps);
+  } else {
+    html += renderTable(iter.tab, iter.enteringCol, iter.leavingRow, iter.ratios, iter.rowOps);
+    if(iter.note) html += `<div class="pivot-analysis"><div class="row-line">${iter.note}</div></div>`;
+  }
+  html += `</div></div>`;
+  return html;
+}
+
+function renderTable(tab, pivotCol, pivotRow, ratios, rowOps){
+  const {Zrow, Zval, A, b, basis, colNames, totalCols, m} = tab;
+
+  // Si hay rowOps, generamos un layout flex: panel de operaciones | tabla
+  let html = `<div class="vba-table-layout">`;
+
+  // ---------- PANEL IZQUIERDO: operaciones de fila ----------
+  if(rowOps){
+    html += `<div class="ops-panel">`;
+    html += `<div class="ops-header">Operación de fila</div>`;
+    // Fila Z
+    html += `<div class="ops-row ops-row-z">${rowOps[0]}</div>`;
+    // Filas de variables básicas
+    for(let i=0;i<m;i++){
+      const isPR = (pivotRow === i);
+      html += `<div class="ops-row ${isPR?'ops-row-pivot':''}">${rowOps[i+1]}</div>`;
+    }
+    html += `</div>`;
+  }
+
+  // ---------- TABLA SIMPLEX (sin la columna de operaciones) ----------
+  html += `<div class="vba-table-wrap"><table class="vba-table">`;
+  html += `<thead><tr>`;
+  html += `<th class="col-base">Var.</th>`;
+  for(let j=0;j<totalCols;j++){
+    const cls = (pivotCol===j)?'pivot-col':'';
+    let label = colNames[j].replace(/(\D+)(\d+)/, '$1<sub>$2</sub>');
+    html += `<th class="${cls}">${label}</th>`;
+  }
+  html += `<th class="col-sol">Solución</th>`;
+  if(ratios && !rowOps) html += `<th class="col-sol" style="background:var(--gold);color:var(--navy);">Razón</th>`;
+  html += `</tr></thead><tbody>`;
+
+  // Fila Z
+  html += `<tr>`;
+  html += `<td class="cell-base" style="background:var(--navy-light);color:var(--paper);font-weight:700;">Z</td>`;
+  for(let j=0;j<totalCols;j++){
+    const cls = (pivotCol===j) ? 'cell-z pivot-col' : 'cell-z';
+    html += `<td class="${cls}">${fmtNum(Zrow[j])}</td>`;
+  }
+  html += `<td class="cell-z" style="background:var(--gold);">${fmtNum(Zval)}</td>`;
+  if(ratios && !rowOps) html += `<td class="cell-z"></td>`;
+  html += `</tr>`;
+
+  // Filas de la base
+  for(let i=0;i<m;i++){
+    const isPR = (pivotRow === i);
+    html += `<tr class="${isPR?'pivot-row':''}">`;
+    let bvLabel = colNames[basis[i]].replace(/(\D+)(\d+)/, '$1<sub>$2</sub>');
+    html += `<td class="cell-base">${bvLabel}</td>`;
+    for(let j=0;j<totalCols;j++){
+      let cls = '';
+      if(pivotCol===j) cls += ' pivot-col';
+      if(isPR && pivotCol===j) cls = 'pivot-cell';
+      html += `<td class="${cls}">${fmtNum(A[i][j])}</td>`;
+    }
+    html += `<td class="cell-sol">${fmtNum(b[i])}</td>`;
+    if(ratios && !rowOps){
+      const r = ratios[i];
+      if(r && r.value !== null){
+        const rcls = r.isMin ? 'cell-sol pivot-cell' : 'cell-sol';
+        html += `<td class="${rcls}">${formatFraction(r.value)}</td>`;
+      } else {
+        html += `<td class="cell-sol">—</td>`;
+      }
+    }
+    html += `</tr>`;
+  }
+  html += `</tbody></table></div>`;
+  html += `</div>`;  // cierre vba-table-layout
+  return html;
+}
+
+document.getElementById('solve-btn').addEventListener('click',()=>{
+  try{
+    const model = readModel();
+    const result = runSimplex(model);
+    renderResults(model, result);
+    document.querySelector('.panel-right').scrollTop = 0;
+  } catch(err){
+    document.getElementById('results').innerHTML =
+      `<div class="error-msg"><strong>Datos incompletos</strong>${err.message}</div>`;
+  }
+});
+
+document.getElementById('example-btn').addEventListener('click',()=>{
+  document.getElementById('opt-type').value = 'max';
+  numVarsInput.value = 2; numConstraintsInput.value = 3;
+  buildObjective(2); buildConstraints(3, 2);
+  const objCoefs = objectiveRow.querySelectorAll('.obj-c');
+  objCoefs[0].value = 50; objCoefs[1].value = 40;
+  const cstrs = document.querySelectorAll('.constraint');
+  const set = (c, coefs, op, b)=>{
+    const inputs = c.querySelectorAll('.cstr-c');
+    coefs.forEach((v,i)=>inputs[i].value = v);
+    c.querySelector('.op-select').value = op;
+    c.querySelector('.bval').value = b;
+  };
+  set(cstrs[0], [4,3], '<=', 48);
+  set(cstrs[1], [2,1], '<=', 16);
+  set(cstrs[2], [0,1], '>=', 4);
+  document.getElementById('solve-btn').click();
+});
+
+buildObjective(2);
+buildConstraints(3, 2);
+const initObj = objectiveRow.querySelectorAll('.obj-c');
+initObj[0].value = 50; initObj[1].value = 40;
+const initCs = document.querySelectorAll('.constraint');
+const setI = (c,coefs,op,b)=>{
+  const inputs = c.querySelectorAll('.cstr-c');
+  coefs.forEach((v,i)=>inputs[i].value = v);
+  c.querySelector('.op-select').value = op;
+  c.querySelector('.bval').value = b;
+};
+setI(initCs[0],[4,3],'<=',48);
+setI(initCs[1],[2,1],'<=',16);
+setI(initCs[2],[0,1],'>=',4);
+</script>
+</body>
+</html>

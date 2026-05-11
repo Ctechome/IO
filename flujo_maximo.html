@@ -1,0 +1,1561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Flujo Máximo — Edmonds-Karp · Investigación de Operaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#fafaf7; --paper-2:#f2f0e8; --paper-3:#e8e5da;
+    --ink:#0a1628; --navy:#14244a; --navy-light:#2a3a6e;
+    --gold:#b08d28; --gold-light:#d4ae47; --gold-soft:#e8d59a;
+    --muted:#5b6478; --grid:#d8d4c4;
+    --error:#8a2a2a; --success:#2a5a3a;
+    --edge:#6b7897; --edge-hover:#3a4a78;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,sans-serif;}
+  body{
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(20,36,74,0.04), transparent 50%),
+      radial-gradient(circle at 85% 90%, rgba(176,141,40,0.05), transparent 50%);
+    min-height:100vh;
+  }
+
+  /* ============== HEADER ============== */
+  header.masthead{
+    border-bottom:3px double var(--navy);
+    padding:32px 48px 26px;
+    display:grid;grid-template-columns:auto 1fr auto;
+    align-items:end;gap:36px;background:var(--paper);position:relative;
+  }
+  header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+  .brand{
+    font-family:'Cormorant Garamond',serif;font-weight:600;font-size:13px;
+    letter-spacing:0.22em;text-transform:uppercase;
+    border:1.5px solid var(--navy);padding:9px 16px;
+    background:var(--navy);color:var(--paper);
+  }
+  .title-block h1{
+    font-family:'Cormorant Garamond',serif;font-weight:400;
+    font-size:clamp(38px,5.5vw,62px);line-height:0.95;letter-spacing:-0.015em;color:var(--navy);
+  }
+  .title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+  .title-block .subtitle{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.18em;
+    color:var(--muted);margin-top:10px;text-transform:uppercase;font-weight:500;
+  }
+  .meta{text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;}
+  .meta strong{color:var(--navy);display:block;font-size:11px;font-weight:600;}
+
+  /* ============== LAYOUT ============== */
+  main{
+    display:grid;
+    grid-template-columns:minmax(400px,440px) 1fr;
+    gap:0;
+    min-height:calc(100vh - 130px);
+  }
+  @media(max-width:1100px){main{grid-template-columns:1fr;}.panel-left{border-right:none !important;border-bottom:3px double var(--navy);}}
+
+  /* ============== LEFT PANEL ============== */
+  .panel-left{
+    border-right:3px double var(--navy);padding:30px 28px 60px;
+    background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
+    overflow-y:auto;position:relative;
+  }
+  .panel-left::before{content:"";position:absolute;top:0;left:-1px;right:-1px;height:1px;background:var(--gold);}
+  .section-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.22em;
+    text-transform:uppercase;color:var(--gold);margin-bottom:8px;
+    display:flex;align-items:center;gap:10px;font-weight:600;
+  }
+  .section-label::before{content:"§";font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);font-style:italic;}
+  .section-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:500;margin-bottom:16px;line-height:1.1;color:var(--navy);}
+
+  /* Modos de herramienta - botones tipo segmented */
+  .tool-group{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px;
+  }
+  .tool-btn{
+    background:var(--paper);
+    border:1.5px solid var(--navy);
+    color:var(--navy);
+    padding:10px 8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-weight:600;
+    cursor:pointer;
+    transition:all 0.15s;
+    text-align:center;
+  }
+  .tool-btn:hover{background:var(--paper-2);}
+  .tool-btn.active{
+    background:var(--navy);color:var(--paper);
+    box-shadow:inset 0 -3px 0 var(--gold);
+  }
+  .tool-btn .icon{display:block;font-size:16px;margin-bottom:2px;font-family:'Cormorant Garamond',serif;font-style:italic;}
+
+  .field-group{
+    background:var(--paper);
+    border:1px solid var(--paper-3);
+    border-left:3px solid var(--gold);
+    padding:12px 14px;
+    margin-bottom:10px;
+  }
+  .field-row{
+    display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;
+    margin-bottom:6px;
+  }
+  .field-row:last-child{margin-bottom:0;}
+  .field-row label{
+    font-size:13px;font-weight:500;color:var(--navy);
+  }
+  .field-row input,.field-row select{
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    padding:6px 10px;border:1.5px solid var(--navy);background:var(--paper);
+    color:var(--navy);font-weight:600;width:100%;
+  }
+  .field-row input:focus,.field-row select:focus{outline:2px solid var(--gold);outline-offset:1px;}
+
+  .help-text{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;color:var(--muted);
+    line-height:1.6;margin-top:6px;padding:8px 10px;
+    background:rgba(20,36,74,0.04);
+    border-left:2px solid var(--gold);
+  }
+  .help-text strong{color:var(--navy);}
+
+  .solve-btn{
+    width:100%;margin-top:20px;padding:18px;
+    background:var(--navy);color:var(--paper);
+    font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;
+    letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;
+    transition:all 0.3s cubic-bezier(.4,0,.2,1);
+    border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);
+  }
+  .solve-btn::after{content:"→";margin-left:12px;display:inline-block;transition:transform 0.3s;color:var(--gold-light);}
+  .solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);}
+  .solve-btn:hover::after{transform:translateX(8px);color:var(--navy);}
+  .solve-btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--gold);}
+
+  .secondary-btn{
+    width:100%;margin-top:8px;padding:10px;background:transparent;
+    border:1px dashed var(--navy);font-family:'JetBrains Mono',monospace;
+    font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;
+    color:var(--navy);font-weight:500;transition:all 0.2s;
+  }
+  .secondary-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+  .secondary-btn.danger{border-color:var(--error);color:var(--error);}
+  .secondary-btn.danger:hover{background:var(--error);color:var(--paper);}
+
+  /* Tabla de arcos */
+  .arcs-table-wrap{
+    border:1px solid var(--navy);
+    margin-top:14px;
+    max-height:280px;
+    overflow-y:auto;
+    background:var(--paper);
+  }
+  .arcs-table{
+    width:100%;border-collapse:collapse;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  }
+  .arcs-table th{
+    background:var(--navy);color:var(--paper);
+    padding:7px 6px;font-size:10px;font-weight:600;
+    letter-spacing:0.06em;text-transform:uppercase;
+    border-bottom:2px solid var(--gold);
+    position:sticky;top:0;
+  }
+  .arcs-table td{
+    padding:6px 6px;text-align:center;
+    border-bottom:1px solid var(--paper-3);color:var(--navy);
+  }
+  .arcs-table td.from-to{font-weight:700;}
+  .arcs-table td.del-cell{padding:2px;}
+  .arcs-table .del-btn{
+    background:transparent;border:none;color:var(--error);
+    cursor:pointer;font-size:14px;font-weight:700;padding:4px 8px;
+  }
+  .arcs-table .del-btn:hover{background:var(--error);color:var(--paper);}
+  .arcs-table tr.saturated td{background:rgba(138,42,42,0.08);}
+  .arcs-table tr.flowing td{background:rgba(176,141,40,0.08);}
+
+  /* ============== RIGHT PANEL ============== */
+  .panel-right{
+    padding:30px 36px 60px;background:var(--paper);overflow-y:auto;
+  }
+
+  /* SVG board */
+  .board-wrap{
+    border:1.5px solid var(--navy);
+    background:var(--paper);
+    padding:6px;
+    box-shadow:5px 5px 0 var(--gold-soft);
+    position:relative;
+    margin-bottom:24px;
+  }
+  .board-wrap::before{
+    content:"FIG. 1 — Red de flujo";
+    position:absolute;
+    top:-10px;left:18px;
+    background:var(--paper);padding:0 10px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;
+    letter-spacing:0.15em;color:var(--gold);font-weight:700;
+  }
+  #board{
+    width:100%;
+    height:560px;
+    background:
+      linear-gradient(rgba(20,36,74,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20,36,74,0.04) 1px, transparent 1px),
+      var(--paper);
+    background-size:30px 30px, 30px 30px;
+    display:block;
+    cursor:crosshair;
+  }
+  #board.mode-move{cursor:grab;}
+  #board.mode-move:active{cursor:grabbing;}
+  #board.mode-edge{cursor:cell;}
+  #board.mode-delete{cursor:not-allowed;}
+
+  /* Nodos SVG */
+  .node{cursor:pointer;}
+  .node circle{
+    fill:var(--paper);
+    stroke:var(--navy);
+    stroke-width:2.5;
+    transition:fill 0.15s, stroke 0.15s;
+  }
+  .node:hover circle{fill:var(--paper-2);stroke:var(--gold);}
+  .node text{
+    text-anchor:middle;
+    dominant-baseline:central;
+    font-size:18px;
+    font-weight:700;
+    font-family:'Cormorant Garamond',serif;
+    font-style:italic;
+    fill:var(--navy);
+    pointer-events:none;
+    user-select:none;
+  }
+  .node.source circle{fill:var(--navy);stroke:var(--navy);}
+  .node.source text{fill:var(--gold-light);}
+  .node.sink circle{fill:var(--gold);stroke:var(--navy);stroke-width:3;}
+  .node.sink text{fill:var(--paper);}
+  .node.selected circle{
+    stroke:var(--error);stroke-width:4;
+    stroke-dasharray:4 3;
+  }
+  .node.path-node circle{
+    stroke:var(--success);stroke-width:4;
+  }
+
+  /* ====== LEYENDA ====== */
+  .legend{
+    border-top:1px solid var(--paper-3);
+    padding:10px 14px 6px;
+    margin-top:6px;
+  }
+  .legend-title{
+    font-family:'JetBrains Mono',monospace;
+    font-size:9.5px;
+    color:var(--gold);
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .legend-items{
+    display:flex;flex-wrap:wrap;gap:14px 22px;
+  }
+  .legend-item{
+    display:flex;align-items:center;gap:7px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;color:var(--navy);font-weight:500;
+  }
+  .legend-dot{
+    width:14px;height:14px;border-radius:50%;
+    display:inline-block;border:1.5px solid var(--navy);
+  }
+  .legend-dot.source{background:var(--navy);}
+  .legend-dot.sink{background:var(--gold);}
+
+  /* ====== ARISTAS — color de flujo unificado, ancho proporcional ====== */
+  .edge-path{
+    stroke:#aab2c2;            /* gris-azul muy suave para arcos sin uso */
+    stroke-width:1.5;
+    fill:none;
+    transition:stroke 0.2s, stroke-width 0.2s;
+  }
+  .edge-group:hover .edge-path{stroke:var(--navy);stroke-width:2.5;}
+
+  /* Arcos por los que circula flujo: VERDE OSCURO uniforme,
+     el grosor se controla vía atributo stroke-width inline (proporcional) */
+  .edge-path.has-flow{
+    stroke:#2a5a3a;            /* verde académico — la "ruta del flujo" */
+  }
+
+  /* Arco saturado: trazo verde + halo rojo sutil para señalar
+     que opera al 100% sin perder la pista del color de flujo */
+  .edge-path.saturated{
+    stroke:#1f4a2f;            /* verde más oscuro para los saturados */
+    filter:drop-shadow(0 0 2px rgba(138,42,42,0.55));
+  }
+
+  /* Camino aumentante de la iteración actual (animación) */
+  .edge-path.path-active{
+    stroke:var(--gold);
+    stroke-width:5 !important;
+    stroke-dasharray:8 4;
+    animation:dash 0.6s linear infinite;
+    filter:drop-shadow(0 0 3px rgba(176,141,40,0.6));
+  }
+  @keyframes dash{to{stroke-dashoffset:-24;}}
+
+  /* ====== ETIQUETAS DE ARCOS — fondo blanco con borde discreto ====== */
+  .edge-label-bg{
+    fill:var(--paper);
+    stroke:#cfd5e0;
+    stroke-width:1;
+  }
+  .edge-label-bg.has-flow{
+    stroke:#2a5a3a;
+    stroke-width:1.2;
+  }
+  .edge-label-bg.saturated{
+    stroke:#8a2a2a;
+    stroke-width:1.5;
+    fill:#fdf5f5;              /* fondo rosa muy claro: indicador adicional */
+  }
+
+  .edge-label{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    font-weight:600;
+    text-anchor:middle;
+    dominant-baseline:central;
+    pointer-events:none;
+    user-select:none;
+  }
+  .edge-label .flow-num{fill:var(--navy);font-weight:700;}
+  .edge-label.has-flow .flow-num{fill:#2a5a3a;font-weight:800;}
+  .edge-label.saturated .flow-num{fill:#8a2a2a;font-weight:800;}
+  .edge-label .cap-num{fill:#8e95a5;font-weight:500;}
+  .edge-label .slash{fill:#bcc1cc;}
+
+  /* Veredicto */
+  .verdict{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+    border:2px solid var(--navy);background:var(--navy);color:var(--paper);
+    box-shadow:6px 6px 0 var(--gold);position:relative;margin-bottom:24px;
+  }
+  .verdict::before{content:"";position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:1px solid rgba(212,174,71,0.3);pointer-events:none;}
+  .verdict-cell{padding:22px 24px;border-right:1px solid rgba(212,174,71,0.3);}
+  .verdict-cell:last-child{border-right:none;}
+  .verdict-label{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;
+    text-transform:uppercase;color:var(--gold-light);margin-bottom:6px;font-weight:600;
+  }
+  .verdict-value{
+    font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:400;
+    line-height:1;letter-spacing:-0.02em;color:var(--paper);
+  }
+  .verdict-value em{color:var(--gold-light);font-style:italic;}
+
+  /* Iteraciones */
+  .iter-block{
+    background:var(--paper);border:1.5px solid var(--navy);
+    margin-bottom:18px;box-shadow:4px 4px 0 var(--gold-soft);overflow:hidden;
+  }
+  .iter-header{
+    background:var(--navy);color:var(--paper);
+    padding:10px 22px;display:flex;align-items:center;justify-content:space-between;
+    border-bottom:2px solid var(--gold);
+  }
+  .iter-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:20px;font-weight:500;}
+  .iter-title em{color:var(--gold-light);font-style:italic;}
+  .iter-tag{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.14em;
+    background:var(--gold);color:var(--navy);padding:5px 12px;font-weight:700;text-transform:uppercase;
+  }
+  .iter-body{padding:18px 22px;}
+
+  .iter-info-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:14px;
+  }
+  .iter-info-cell{
+    background:var(--paper-2);
+    border-left:3px solid var(--gold);
+    padding:10px 14px;
+  }
+  .iter-info-label{
+    font-family:'JetBrains Mono',monospace;font-size:9.5px;
+    color:var(--gold);letter-spacing:0.14em;text-transform:uppercase;
+    font-weight:700;margin-bottom:3px;
+  }
+  .iter-info-value{
+    font-family:'JetBrains Mono',monospace;font-size:14px;
+    color:var(--navy);font-weight:700;
+  }
+
+  .path-display{
+    font-family:'Cormorant Garamond',serif;font-style:italic;
+    font-size:22px;color:var(--navy);
+    background:var(--paper-2);padding:12px 18px;
+    border:1px solid var(--paper-3);border-left:3px solid var(--gold);
+    margin-bottom:12px;text-align:center;letter-spacing:0.05em;
+  }
+  .path-display .arrow{color:var(--gold);font-weight:700;margin:0 6px;}
+
+  /* Tabla residual */
+  .residual-wrap{
+    border:1px solid var(--navy);
+    margin-top:10px;overflow-x:auto;background:var(--paper);
+  }
+  .residual-table{
+    width:100%;border-collapse:collapse;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  }
+  .residual-table th{
+    background:var(--navy);color:var(--paper);
+    padding:7px 8px;font-size:10px;font-weight:600;
+    letter-spacing:0.06em;text-transform:uppercase;
+    border-bottom:2px solid var(--gold);
+  }
+  .residual-table td{
+    padding:6px 8px;text-align:center;
+    border-bottom:1px solid var(--paper-3);color:var(--navy);
+  }
+  .residual-table tr.in-path td{background:rgba(42,90,58,0.10);font-weight:700;}
+  .residual-table tr.in-path td:first-child{border-left:3px solid var(--success);}
+
+  /* Empty state */
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--muted);
+  }
+  .empty-state .icon{
+    font-family:'Cormorant Garamond',serif;font-style:italic;font-size:100px;line-height:1;
+    color:var(--gold);opacity:0.35;margin-bottom:18px;font-weight:300;
+  }
+  .empty-state h3{
+    font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:500;
+    color:var(--navy);margin-bottom:8px;
+  }
+  .empty-state p{font-size:13px;line-height:1.6;max-width:440px;margin:0 auto;color:var(--muted);}
+  .empty-state strong{color:var(--navy);}
+
+  .error-msg{
+    border:2px solid var(--error);background:rgba(138,42,42,0.05);
+    padding:16px 20px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;
+  }
+  .error-msg strong{
+    color:var(--error);font-family:'Cormorant Garamond',serif;font-size:16px;
+    display:block;margin-bottom:4px;font-weight:600;
+  }
+
+  /* Mincut */
+  .mincut-block{
+    background:var(--paper-2);border:1.5px solid var(--navy);
+    padding:18px 22px;margin-top:18px;box-shadow:4px 4px 0 var(--gold-soft);
+  }
+  .mincut-block h4{
+    font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:500;color:var(--navy);
+    margin-bottom:10px;border-bottom:1px solid var(--gold);padding-bottom:6px;
+  }
+  .mincut-arc{
+    display:inline-block;font-family:'JetBrains Mono',monospace;font-size:12px;
+    background:var(--paper);border:1px solid var(--error);
+    padding:4px 10px;margin:3px 4px 3px 0;color:var(--navy);font-weight:600;
+  }
+  .mincut-arc strong{color:var(--error);}
+
+  /* ====== DESCOMPOSICIÓN DEL FLUJO EN RUTAS ====== */
+  .flow-decomp{
+    background:var(--paper-2);
+    border:1.5px solid var(--navy);
+    padding:22px 26px;
+    margin-top:24px;
+    box-shadow:5px 5px 0 var(--gold-soft);
+  }
+  .flow-decomp h4{
+    font-family:'Cormorant Garamond',serif;
+    font-size:22px;font-weight:500;color:var(--navy);
+    margin-bottom:10px;
+    border-bottom:1px solid var(--gold);
+    padding-bottom:8px;
+  }
+  .paths-list{display:flex;flex-direction:column;gap:8px;}
+  .path-row{
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:14px;align-items:center;
+    background:var(--paper);
+    border:1px solid var(--paper-3);
+    border-left:3px solid #2a5a3a;
+    padding:10px 14px;
+  }
+  .path-num{
+    font-family:'JetBrains Mono',monospace;
+    font-size:10px;
+    color:var(--gold);
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    font-weight:700;
+    min-width:60px;
+  }
+  .path-flow{
+    display:flex;align-items:center;gap:6px;
+    flex-wrap:wrap;
+  }
+  .path-node-pill{
+    display:inline-block;
+    padding:3px 11px;
+    background:var(--navy);
+    color:var(--gold-light);
+    border-radius:14px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:700;
+  }
+  .path-arrow{color:#2a5a3a;font-weight:900;font-size:14px;}
+  .path-amount{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:#2a5a3a;
+    background:rgba(42,90,58,0.1);
+    padding:5px 10px;
+    border:1px solid #2a5a3a;
+    font-weight:700;
+  }
+  .path-amount strong{font-size:15px;}
+  .path-total{
+    margin-top:14px;
+    padding:10px 14px;
+    background:var(--navy);
+    color:var(--gold-light);
+    font-family:'JetBrains Mono',monospace;
+    font-size:14px;
+    text-align:center;
+    border:1px solid var(--gold);
+  }
+  .path-total strong{color:var(--paper);font-weight:700;}
+
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+  .iter-block{animation:fadeInUp 0.5s cubic-bezier(.4,0,.2,1) backwards;}
+
+  footer{
+    border-top:3px double var(--navy);padding:18px 48px;
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);
+    display:flex;justify-content:space-between;background:var(--paper);position:relative;
+  }
+  footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+
+  .panel-left::-webkit-scrollbar,.panel-right::-webkit-scrollbar,.arcs-table-wrap::-webkit-scrollbar{width:8px;}
+  .panel-left::-webkit-scrollbar-track,.panel-right::-webkit-scrollbar-track,.arcs-table-wrap::-webkit-scrollbar-track{background:var(--paper-2);}
+  .panel-left::-webkit-scrollbar-thumb,.panel-right::-webkit-scrollbar-thumb,.arcs-table-wrap::-webkit-scrollbar-thumb{background:var(--navy);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="brand">IO · REDES DE FLUJO</div>
+  <div class="title-block">
+    <h1>Flujo <em>Máximo</em></h1>
+    <div class="subtitle">Algoritmo de Edmonds-Karp · Teorema máx-flujo / mín-corte</div>
+  </div>
+  <div class="meta">
+    <strong>Investigación de Operaciones</strong>
+    Dr. Carlos Miguel López Martínez · Oaxaca<br>
+    Edición Académica · 2026
+  </div>
+</header>
+
+<main>
+  <section class="panel-left">
+
+    <div class="section-label">Herramientas</div>
+    <h2 class="section-title">Construir la red</h2>
+
+    <div class="tool-group">
+      <button class="tool-btn active" data-mode="node">
+        <span class="icon">●</span>Agregar nodo
+      </button>
+      <button class="tool-btn" data-mode="edge">
+        <span class="icon">→</span>Agregar arco
+      </button>
+      <button class="tool-btn" data-mode="move">
+        <span class="icon">⇄</span>Mover nodo
+      </button>
+      <button class="tool-btn" data-mode="delete">
+        <span class="icon">✕</span>Eliminar
+      </button>
+    </div>
+
+    <div class="help-text" id="mode-help">
+      <strong>Modo activo:</strong> haga clic en el lienzo para agregar un nodo nuevo.
+    </div>
+
+    <div class="section-label" style="margin-top:20px;">Capacidad del próximo arco</div>
+    <div class="field-group">
+      <div class="field-row">
+        <label>Capacidad</label>
+        <input type="number" id="capacity" value="10" min="1" step="1"/>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:14px;">Fuente y Sumidero</div>
+    <div class="field-group">
+      <div class="field-row">
+        <label>Fuente (s)</label>
+        <select id="source"></select>
+      </div>
+      <div class="field-row">
+        <label>Sumidero (t)</label>
+        <select id="sink"></select>
+      </div>
+    </div>
+
+    <button class="solve-btn" id="solve-btn">Resolver</button>
+    <button class="secondary-btn" id="example-btn">↻ Cargar ejemplo clásico</button>
+    <button class="secondary-btn danger" id="clear-btn">⌫ Limpiar todo</button>
+
+    <div class="section-label" style="margin-top:24px;">Arcos definidos</div>
+    <div class="arcs-table-wrap">
+      <table class="arcs-table">
+        <thead>
+          <tr>
+            <th>Desde</th><th>Hacia</th><th>Cap.</th><th>Flujo</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+  </section>
+
+  <section class="panel-right">
+    <div class="board-wrap">
+      <svg id="board" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="legend">
+        <div class="legend-title">Leyenda</div>
+        <div class="legend-items">
+          <div class="legend-item">
+            <svg width="44" height="14" viewBox="0 0 44 14">
+              <line x1="2" y1="7" x2="42" y2="7" stroke="#aab2c2" stroke-width="1.5"/>
+            </svg>
+            <span>Arco sin uso</span>
+          </div>
+          <div class="legend-item">
+            <svg width="44" height="14" viewBox="0 0 44 14">
+              <line x1="2" y1="7" x2="42" y2="7" stroke="#2a5a3a" stroke-width="3"/>
+            </svg>
+            <span>Con flujo</span>
+          </div>
+          <div class="legend-item">
+            <svg width="44" height="14" viewBox="0 0 44 14">
+              <line x1="2" y1="7" x2="42" y2="7" stroke="#1f4a2f" stroke-width="6"/>
+            </svg>
+            <span>Mayor flujo (grosor proporcional)</span>
+          </div>
+          <div class="legend-item">
+            <svg width="44" height="14" viewBox="0 0 44 14">
+              <rect x="2" y="2" width="40" height="10" rx="2" fill="#fdf5f5" stroke="#8a2a2a" stroke-width="1.5"/>
+            </svg>
+            <span>Saturado (flujo = capacidad)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot source"></span>
+            <span>Fuente (s)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot sink"></span>
+            <span>Sumidero (t)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="results">
+      <div class="empty-state">
+        <div class="icon">∇</div>
+        <h3>Esperando la red</h3>
+        <p>Construya la red en el lienzo superior agregando nodos y arcos, defina la <strong>fuente</strong> y el <strong>sumidero</strong>, y pulse <strong>Resolver</strong> para ver el desarrollo paso a paso del algoritmo de Edmonds-Karp con la red residual completa.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Edmonds-Karp · Dr. Carlos Miguel López Martínez, Mayo 2026</div>
+  <div>f<sub>máx</sub> = mín-corte (s, t)</div>
+</footer>
+
+<script>
+/* =====================================================================
+   FLUJO MÁXIMO — ALGORITMO DE EDMONDS-KARP
+   ----------------------------------------------------------------
+   Implementación correcta con grafo residual:
+   - Para cada arco (u,v) con capacidad c, mantenemos:
+       capacidad residual c_f(u,v) = c(u,v) - f(u,v)
+       capacidad residual inversa c_f(v,u) = f(u,v)
+   - BFS busca camino aumentante en la red residual.
+   - Bottleneck = mín de capacidades residuales del camino.
+   - Aumentamos f en arcos directos y disminuimos en arcos inversos.
+   - Termina cuando BFS no encuentra camino s→t.
+   - El valor de flujo máximo = mín-corte (s,t) por el teorema.
+   ===================================================================== */
+
+const svg = document.getElementById('board');
+const tableBody = document.getElementById('tableBody');
+const sourceSelect = document.getElementById('source');
+const sinkSelect = document.getElementById('sink');
+const modeHelp = document.getElementById('mode-help');
+
+// Estado de la red
+const state = {
+  nodes: [],
+  edges: [],
+  nextNodeId: 0
+};
+
+// Estado de la UI
+let mode = 'node';
+let selectedNodeForEdge = null;
+let draggingNode = null;
+let dragOffset = {x:0, y:0};
+
+// ---------- Selector de modo ----------
+const modeHelpText = {
+  'node': '<strong>Modo Agregar nodo:</strong> haga clic en el lienzo para crear un nodo.',
+  'edge': '<strong>Modo Agregar arco:</strong> haga clic en el nodo origen, luego en el nodo destino. La capacidad será la del campo de abajo.',
+  'move': '<strong>Modo Mover nodo:</strong> arrastre cualquier nodo para reposicionarlo.',
+  'delete': '<strong>Modo Eliminar:</strong> haga clic en un nodo (con sus arcos) o en una etiqueta de arco para eliminarlos.'
+};
+
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    mode = btn.dataset.mode;
+    selectedNodeForEdge = null;
+    modeHelp.innerHTML = modeHelpText[mode];
+    svg.className.baseVal = `mode-${mode}`;
+    render();
+  });
+});
+svg.className.baseVal = 'mode-node';
+
+// ---------- Conversión de coordenadas ----------
+function getSVGPoint(evt){
+  const pt = svg.createSVGPoint();
+  pt.x = evt.clientX; pt.y = evt.clientY;
+  return pt.matrixTransform(svg.getScreenCTM().inverse());
+}
+
+// ---------- Manejador de clics en el lienzo ----------
+svg.addEventListener('click', (e) => {
+  // Si se hizo clic en un nodo o en una etiqueta de arco, deja que sus handlers lo manejen
+  if(e.target.closest('.node') || e.target.closest('.edge-group')) return;
+  if(mode !== 'node') return;
+  const p = getSVGPoint(e);
+  // Margen mínimo para no salir del lienzo
+  if(p.x < 30 || p.x > 1170 || p.y < 30 || p.y > 570) return;
+  addNode(p.x, p.y);
+});
+
+function addNode(x, y){
+  const id = state.nextNodeId++;
+  const name = generateNodeName(state.nodes.length);
+  state.nodes.push({id, name, x, y});
+  refreshSelectors();
+  render();
+}
+
+function generateNodeName(idx){
+  // A, B, ..., Z, A1, B1, ...
+  const letter = String.fromCharCode(65 + (idx % 26));
+  const suffix = Math.floor(idx / 26);
+  return suffix === 0 ? letter : letter + suffix;
+}
+
+// ---------- Drag de nodos ----------
+svg.addEventListener('mousedown', (e) => {
+  if(mode !== 'move') return;
+  const nodeEl = e.target.closest('.node');
+  if(!nodeEl) return;
+  const id = +nodeEl.dataset.id;
+  draggingNode = state.nodes.find(n => n.id === id);
+  const p = getSVGPoint(e);
+  dragOffset.x = draggingNode.x - p.x;
+  dragOffset.y = draggingNode.y - p.y;
+  e.preventDefault();
+});
+
+svg.addEventListener('mousemove', (e) => {
+  if(!draggingNode) return;
+  const p = getSVGPoint(e);
+  const newX = Math.max(30, Math.min(1170, p.x + dragOffset.x));
+  const newY = Math.max(30, Math.min(570, p.y + dragOffset.y));
+  draggingNode.x = newX;
+  draggingNode.y = newY;
+  render();
+});
+
+window.addEventListener('mouseup', () => { draggingNode = null; });
+
+// ---------- Manejador de clic en nodo (delegado en render) ----------
+function onNodeClick(id){
+  if(mode === 'edge'){
+    if(selectedNodeForEdge === null){
+      selectedNodeForEdge = id;
+      render();
+    } else if(selectedNodeForEdge === id){
+      // Cancelar selección
+      selectedNodeForEdge = null;
+      render();
+    } else {
+      // Verificar que no exista ya este arco
+      const exists = state.edges.some(e => e.from === selectedNodeForEdge && e.to === id);
+      if(exists){
+        alert('Ya existe un arco entre estos dos nodos en esa dirección.');
+        selectedNodeForEdge = null;
+        render();
+        return;
+      }
+      const cap = parseInt(document.getElementById('capacity').value) || 10;
+      if(cap <= 0){
+        alert('La capacidad debe ser un entero positivo.');
+        return;
+      }
+      state.edges.push({
+        from: selectedNodeForEdge,
+        to: id,
+        cap,
+        flow: 0
+      });
+      selectedNodeForEdge = null;
+      updateTable();
+      render();
+    }
+  } else if(mode === 'delete'){
+    // Eliminar nodo y todos sus arcos
+    if(!confirm(`¿Eliminar el nodo "${state.nodes.find(n=>n.id===id).name}" y todos sus arcos?`)) return;
+    state.edges = state.edges.filter(e => e.from !== id && e.to !== id);
+    state.nodes = state.nodes.filter(n => n.id !== id);
+    refreshSelectors();
+    updateTable();
+    render();
+  }
+}
+
+function onEdgeClick(idx){
+  if(mode === 'delete'){
+    state.edges.splice(idx, 1);
+    updateTable();
+    render();
+  }
+}
+
+// ---------- Curvado de arcos para evitar superposiciones ----------
+function getEdgePath(edge, edgeIdx){
+  const a = state.nodes.find(n => n.id === edge.from);
+  const b = state.nodes.find(n => n.id === edge.to);
+  if(!a || !b) return null;
+
+  // Detectar si existe arco en sentido inverso para curvar
+  const hasReverse = state.edges.some(e => e.from === edge.to && e.to === edge.from);
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx/len, uy = dy/len;
+  // Punto inicial y final descontando el radio del nodo (30)
+  const sx = a.x + ux*32;
+  const sy = a.y + uy*32;
+  const tx = b.x - ux*32;
+  const ty = b.y - uy*32;
+
+  if(hasReverse){
+    // Curvar: el control point es perpendicular al segmento
+    const offset = 35;
+    const mx = (sx + tx)/2;
+    const my = (sy + ty)/2;
+    // Perpendicular: (-uy, ux)
+    const cx = mx + (-uy) * offset;
+    const cy = my + (ux) * offset;
+    return {
+      path: `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`,
+      labelX: cx,
+      labelY: cy,
+      isCurve: true
+    };
+  } else {
+    return {
+      path: `M ${sx} ${sy} L ${tx} ${ty}`,
+      labelX: (sx + tx)/2,
+      labelY: (sy + ty)/2,
+      isCurve: false
+    };
+  }
+}
+
+// ---------- Render del SVG ----------
+function render(){
+  const sourceId = +sourceSelect.value;
+  const sinkId = +sinkSelect.value;
+
+  let html = `
+    <defs>
+      <marker id="arrow-default" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#aab2c2"/>
+      </marker>
+      <marker id="arrow-flow" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#2a5a3a"/>
+      </marker>
+      <marker id="arrow-saturated" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f4a2f"/>
+      </marker>
+      <marker id="arrow-active" viewBox="0 0 10 10" refX="9" refY="5"
+              markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#b08d28"/>
+      </marker>
+    </defs>`;
+
+  // Calcular el flujo máximo absoluto entre todos los arcos para escalar el grosor
+  const maxFlowAcrossEdges = state.edges.reduce(
+    (m, e) => Math.max(m, e.flow), 0
+  );
+
+  // 1. Aristas
+  state.edges.forEach((edge, idx) => {
+    const info = getEdgePath(edge, idx);
+    if(!info) return;
+
+    let edgeClass = 'edge-path';
+    let bgClass = 'edge-label-bg';
+    let lblClass = 'edge-label';
+    let marker = 'arrow-default';
+    let strokeWidth = 1.5;     // por defecto, arco sin uso
+
+    if(edge.pathActive){
+      edgeClass += ' path-active';
+      marker = 'arrow-active';
+      strokeWidth = 5;
+    } else if(edge.flow > 0){
+      // Grosor proporcional al flujo: mínimo 2.5, máximo 8
+      // Mapeo: flow / maxFlowAcrossEdges  →  [2.5, 8]
+      const ratio = maxFlowAcrossEdges > 0 ? edge.flow / maxFlowAcrossEdges : 0;
+      strokeWidth = 2.5 + ratio * 5.5;
+
+      if(edge.flow >= edge.cap){
+        edgeClass += ' has-flow saturated';
+        bgClass += ' has-flow saturated';
+        lblClass += ' has-flow saturated';
+        marker = 'arrow-saturated';
+      } else {
+        edgeClass += ' has-flow';
+        bgClass += ' has-flow';
+        lblClass += ' has-flow';
+        marker = 'arrow-flow';
+      }
+    }
+
+    // Etiqueta: "flujo / capacidad" con colores diferenciados
+    const flowStr = String(edge.flow);
+    const capStr = String(edge.cap);
+    const labelText = `${flowStr}/${capStr}`;
+    const labelW = labelText.length * 7 + 14;
+    const labelH = 19;
+
+    html += `<g class="edge-group" data-idx="${idx}">
+      <path class="${edgeClass}" d="${info.path}"
+            stroke-width="${strokeWidth}" marker-end="url(#${marker})"/>
+      <rect class="${bgClass}" x="${info.labelX - labelW/2}" y="${info.labelY - labelH/2}"
+            width="${labelW}" height="${labelH}" rx="3"/>
+      <text class="${lblClass}" x="${info.labelX}" y="${info.labelY}">
+        <tspan class="flow-num">${flowStr}</tspan><tspan class="slash"> / </tspan><tspan class="cap-num">${capStr}</tspan>
+      </text>
+    </g>`;
+  });
+
+  // 2. Nodos
+  state.nodes.forEach(n => {
+    let cls = 'node';
+    if(n.id === sourceId) cls += ' source';
+    if(n.id === sinkId) cls += ' sink';
+    if(selectedNodeForEdge === n.id) cls += ' selected';
+    if(n.inPath) cls += ' path-node';
+    html += `<g class="${cls}" data-id="${n.id}">
+      <circle cx="${n.x}" cy="${n.y}" r="30"/>
+      <text x="${n.x}" y="${n.y}">${n.name}</text>
+    </g>`;
+  });
+
+  svg.innerHTML = html;
+
+  // Adjuntar listeners
+  svg.querySelectorAll('.node').forEach(g => {
+    g.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onNodeClick(+g.dataset.id);
+    });
+  });
+  svg.querySelectorAll('.edge-group').forEach(g => {
+    g.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onEdgeClick(+g.dataset.idx);
+    });
+  });
+}
+
+// ---------- Selectores fuente/sumidero ----------
+function refreshSelectors(){
+  const prevSrc = sourceSelect.value;
+  const prevSnk = sinkSelect.value;
+  sourceSelect.innerHTML = '';
+  sinkSelect.innerHTML = '';
+  state.nodes.forEach(n => {
+    sourceSelect.innerHTML += `<option value="${n.id}">${n.name}</option>`;
+    sinkSelect.innerHTML += `<option value="${n.id}">${n.name}</option>`;
+  });
+  // Preservar selección si los IDs siguen existiendo
+  if(state.nodes.some(n => n.id == prevSrc)) sourceSelect.value = prevSrc;
+  else if(state.nodes.length > 0) sourceSelect.value = state.nodes[0].id;
+  if(state.nodes.some(n => n.id == prevSnk)) sinkSelect.value = prevSnk;
+  else if(state.nodes.length > 1) sinkSelect.value = state.nodes[state.nodes.length-1].id;
+}
+sourceSelect.addEventListener('change', render);
+sinkSelect.addEventListener('change', render);
+
+// ---------- Tabla de arcos ----------
+function updateTable(){
+  if(state.edges.length === 0){
+    tableBody.innerHTML = `<tr><td colspan="5" style="color:var(--muted);padding:14px;font-style:italic;">— sin arcos —</td></tr>`;
+    return;
+  }
+  let html = '';
+  state.edges.forEach((e, idx) => {
+    const a = state.nodes.find(n => n.id === e.from);
+    const b = state.nodes.find(n => n.id === e.to);
+    if(!a || !b) return;
+    let rowCls = '';
+    if(e.flow >= e.cap && e.flow > 0) rowCls = 'saturated';
+    else if(e.flow > 0) rowCls = 'flowing';
+    html += `<tr class="${rowCls}">
+      <td class="from-to">${a.name}</td>
+      <td class="from-to">${b.name}</td>
+      <td>${e.cap}</td>
+      <td><strong>${e.flow}</strong></td>
+      <td class="del-cell"><button class="del-btn" data-del="${idx}" title="Eliminar arco">×</button></td>
+    </tr>`;
+  });
+  tableBody.innerHTML = html;
+  tableBody.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.edges.splice(+btn.dataset.del, 1);
+      updateTable();
+      render();
+    });
+  });
+}
+
+// =====================================================================
+//  ALGORITMO EDMONDS-KARP CON RED RESIDUAL CORRECTA
+// =====================================================================
+
+/* Construye una representación adyacente con arcos directos e inversos.
+   Cada arco tiene un "twin" (su par residual). */
+function buildResidualGraph(){
+  const n = state.nodes.length;
+  const adj = Array.from({length: n}, () => []);
+  // Mapa id de nodo → índice 0..n-1
+  const idToIdx = new Map();
+  state.nodes.forEach((nd, i) => idToIdx.set(nd.id, i));
+
+  const arcs = [];
+  state.edges.forEach((e, origIdx) => {
+    const u = idToIdx.get(e.from);
+    const v = idToIdx.get(e.to);
+    // Arco directo
+    const fwd = {to: v, cap: e.cap, flow: 0, twin: arcs.length + 1, isReverse: false, origIdx};
+    // Arco inverso (residual)
+    const rev = {to: u, cap: 0, flow: 0, twin: arcs.length, isReverse: true, origIdx};
+    arcs.push(fwd, rev);
+    adj[u].push(arcs.length - 2);  // índice del fwd
+    adj[v].push(arcs.length - 1);  // índice del rev
+  });
+  return {n, adj, arcs, idToIdx};
+}
+
+/* BFS sobre red residual: retorna parent[] (arco usado para llegar a v) y
+   bottleneck si existe camino, o null si no. */
+function bfsResidual(adj, arcs, src, snk, n){
+  const parent = new Array(n).fill(-1);   // índice del arco usado
+  const visited = new Array(n).fill(false);
+  visited[src] = true;
+  const queue = [src];
+  while(queue.length){
+    const u = queue.shift();
+    if(u === snk) break;
+    for(const arcIdx of adj[u]){
+      const arc = arcs[arcIdx];
+      const residualCap = arc.cap - arc.flow;
+      if(!visited[arc.to] && residualCap > 0){
+        visited[arc.to] = true;
+        parent[arc.to] = arcIdx;
+        queue.push(arc.to);
+      }
+    }
+  }
+  if(!visited[snk]) return null;
+  // Reconstruir camino y calcular bottleneck
+  const pathArcs = [];
+  let cur = snk;
+  let bottleneck = Infinity;
+  while(cur !== src){
+    const arcIdx = parent[cur];
+    const arc = arcs[arcIdx];
+    pathArcs.unshift(arcIdx);
+    bottleneck = Math.min(bottleneck, arc.cap - arc.flow);
+    // Retroceder al nodo origen del arco
+    cur = arcs[arc.twin].to;
+  }
+  return {pathArcs, bottleneck};
+}
+
+/* Descompone el flujo final en rutas s→t mediante DFS greedy.
+   En cada iteración encuentra una ruta con flujo > 0 y le resta el cuello de
+   botella, hasta que no queda flujo en ninguna ruta. Esto produce una
+   representación pedagógicamente clara del flujo máximo como suma de rutas. */
+function decomposeFlowIntoPaths(srcName, snkName){
+  const srcNode = state.nodes.find(n => n.name === srcName);
+  const snkNode = state.nodes.find(n => n.name === snkName);
+  if(!srcNode || !snkNode) return [];
+
+  // Trabajamos sobre una copia del flujo (no modificamos state.edges)
+  const flowCopy = state.edges.map(e => e.flow);
+
+  const paths = [];
+  const MAX_PATHS = 50;     // protección por si hay ciclos
+
+  while(paths.length < MAX_PATHS){
+    // DFS desde src buscando una ruta con flujo positivo en TODOS sus arcos
+    const parent = new Map();      // nodeId → {edgeIdx, prevNodeId}
+    const visited = new Set();
+    visited.add(srcNode.id);
+    const stack = [srcNode.id];
+    let found = false;
+
+    while(stack.length){
+      const u = stack.pop();
+      if(u === snkNode.id){found = true; break;}
+      // Explorar aristas salientes con flujo positivo
+      state.edges.forEach((e, idx) => {
+        if(e.from === u && flowCopy[idx] > 0 && !visited.has(e.to)){
+          visited.add(e.to);
+          parent.set(e.to, {edgeIdx: idx, prev: u});
+          stack.push(e.to);
+        }
+      });
+    }
+
+    if(!found) break;
+
+    // Reconstruir camino y bottleneck
+    const pathNodes = [snkNode.id];
+    const pathEdges = [];
+    let cur = snkNode.id;
+    let bottleneck = Infinity;
+    while(cur !== srcNode.id){
+      const info = parent.get(cur);
+      if(!info) break;
+      pathEdges.unshift(info.edgeIdx);
+      bottleneck = Math.min(bottleneck, flowCopy[info.edgeIdx]);
+      cur = info.prev;
+      pathNodes.unshift(cur);
+    }
+
+    if(bottleneck === Infinity || bottleneck <= 0) break;
+
+    // Restar bottleneck a cada arco del camino
+    pathEdges.forEach(idx => { flowCopy[idx] -= bottleneck; });
+
+    // Convertir IDs de nodos a nombres
+    paths.push({
+      path: pathNodes.map(id => state.nodes.find(n => n.id === id).name),
+      flow: bottleneck
+    });
+  }
+
+  return paths;
+}
+function edmondsKarp(srcId, snkId){
+  const {n, adj, arcs, idToIdx} = buildResidualGraph();
+  const src = idToIdx.get(srcId);
+  const snk = idToIdx.get(snkId);
+
+  if(src === undefined || snk === undefined) return {error: 'Fuente o sumidero inexistente'};
+  if(src === snk) return {error: 'La fuente y el sumidero deben ser distintos'};
+
+  const iterations = [];
+  let maxFlow = 0;
+
+  while(true){
+    const result = bfsResidual(adj, arcs, src, snk, n);
+    if(!result) break;
+    const {pathArcs, bottleneck} = result;
+
+    // Reconstruir secuencia de nodos
+    const pathNodes = [src];
+    pathArcs.forEach(arcIdx => pathNodes.push(arcs[arcIdx].to));
+
+    // Snapshot ANTES del aumento (para mostrar f/c previo)
+    const arcStateBefore = arcs.map(a => ({flow: a.flow, cap: a.cap}));
+
+    // Aumentar flujo: en cada arco del camino, sumar bottleneck;
+    // en el twin (arco inverso residual), restar bottleneck (que se manifiesta
+    // como aumento de su capacidad disponible inversa).
+    pathArcs.forEach(arcIdx => {
+      arcs[arcIdx].flow += bottleneck;
+      arcs[arcs[arcIdx].twin].flow -= bottleneck;
+    });
+
+    maxFlow += bottleneck;
+
+    // Identificar arcos del camino que son inversos (uso de "deshacer flujo")
+    const pathInfo = pathArcs.map(arcIdx => {
+      const arc = arcs[arcIdx];
+      const fromNode = arcs[arc.twin].to;
+      const toNode = arc.to;
+      return {
+        arcIdx,
+        from: state.nodes[fromNode].name,
+        to: state.nodes[toNode].name,
+        capBefore: arcStateBefore[arcIdx].cap,
+        flowBefore: arcStateBefore[arcIdx].flow,
+        residualBefore: arcStateBefore[arcIdx].cap - arcStateBefore[arcIdx].flow,
+        isReverse: arc.isReverse,
+        origIdx: arc.origIdx
+      };
+    });
+
+    iterations.push({
+      iterNum: iterations.length + 1,
+      pathNodes: pathNodes.map(idx => state.nodes[idx].name),
+      pathInfo,
+      bottleneck,
+      cumulativeFlow: maxFlow,
+      // Snapshot del estado de TODOS los arcos originales al final de la iteración
+      edgeSnapshot: state.edges.map((e, i) => ({
+        from: state.nodes.find(n => n.id === e.from).name,
+        to: state.nodes.find(n => n.id === e.to).name,
+        cap: e.cap,
+        flow: arcs[i*2].flow,    // arco directo (los pares vienen en orden fwd/rev)
+        residual: e.cap - arcs[i*2].flow,
+        residualReverse: arcs[i*2].flow,
+        inPath: pathArcs.some(pa => Math.floor(pa/2) === i)
+      }))
+    });
+  }
+
+  // Volcar flujos finales a state.edges
+  state.edges.forEach((e, i) => {
+    e.flow = arcs[i*2].flow;
+  });
+
+  // Calcular el corte mínimo: nodos alcanzables desde src en el grafo residual final
+  const finalBfs = bfsResidual(adj, arcs, src, snk, n);
+  // Re-ejecutamos un BFS marcando alcanzables (no necesitamos camino):
+  const reachable = new Array(n).fill(false);
+  reachable[src] = true;
+  const q2 = [src];
+  while(q2.length){
+    const u = q2.shift();
+    for(const arcIdx of adj[u]){
+      const arc = arcs[arcIdx];
+      if(!reachable[arc.to] && arc.cap - arc.flow > 0){
+        reachable[arc.to] = true;
+        q2.push(arc.to);
+      }
+    }
+  }
+  // Arcos del corte: aquellos (u,v) originales con u alcanzable y v no alcanzable
+  const minCutArcs = [];
+  state.edges.forEach((e, i) => {
+    const u = idToIdx.get(e.from);
+    const v = idToIdx.get(e.to);
+    if(reachable[u] && !reachable[v]){
+      minCutArcs.push({
+        from: state.nodes.find(n => n.id === e.from).name,
+        to: state.nodes.find(n => n.id === e.to).name,
+        cap: e.cap
+      });
+    }
+  });
+
+  return {maxFlow, iterations, minCutArcs, srcName: state.nodes.find(n=>n.id===srcId).name,
+          snkName: state.nodes.find(n=>n.id===snkId).name};
+}
+
+// =====================================================================
+//  RENDERIZADO DE RESULTADOS
+// =====================================================================
+
+function renderResults(result){
+  const out = document.getElementById('results');
+
+  if(result.error){
+    out.innerHTML = `<div class="error-msg"><strong>Error</strong>${result.error}</div>`;
+    return;
+  }
+
+  if(result.maxFlow === 0 && result.iterations.length === 0){
+    out.innerHTML = `<div class="error-msg">
+      <strong>Sin camino factible</strong>
+      No existe ningún camino aumentante de la fuente <strong>${result.srcName}</strong> al sumidero <strong>${result.snkName}</strong>. El flujo máximo es 0.
+    </div>`;
+    return;
+  }
+
+  let html = '';
+
+  // Veredicto
+  html += `<div class="verdict">
+    <div class="verdict-cell">
+      <div class="verdict-label">Flujo máximo s → t</div>
+      <div class="verdict-value">f* = <em>${result.maxFlow}</em></div>
+    </div>
+    <div class="verdict-cell">
+      <div class="verdict-label">Iteraciones (BFS)</div>
+      <div class="verdict-value">${result.iterations.length}</div>
+    </div>
+    <div class="verdict-cell">
+      <div class="verdict-label">Mín-corte (arcos)</div>
+      <div class="verdict-value">${result.minCutArcs.length}</div>
+    </div>
+  </div>`;
+
+  // Iteraciones
+  html += `<div class="section-label" style="color:var(--navy);font-size:11px;margin:24px 0 14px;">Desarrollo paso a paso</div>`;
+  result.iterations.forEach(iter => {
+    html += renderIterationBlock(iter);
+  });
+
+  // ===== Descomposición del flujo en rutas s→t =====
+  if(result.maxFlow > 0){
+    const decomposition = decomposeFlowIntoPaths(result.srcName, result.snkName);
+    if(decomposition.length > 0){
+      html += `<div class="flow-decomp">
+        <h4>Descomposición del flujo máximo en rutas s → t</h4>
+        <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">
+          El flujo máximo de <strong style="color:var(--navy);">${result.maxFlow}</strong> unidades se distribuye por las siguientes rutas independientes desde <strong style="color:var(--navy);">${result.srcName}</strong> hasta <strong style="color:var(--navy);">${result.snkName}</strong>:
+        </p>
+        <div class="paths-list">`;
+      decomposition.forEach((p, i) => {
+        const pathDisplay = p.path.map(n =>
+          `<span class="path-node-pill">${n}</span>`
+        ).join('<span class="path-arrow">→</span>');
+        html += `<div class="path-row">
+          <div class="path-num">Ruta ${i+1}</div>
+          <div class="path-flow">${pathDisplay}</div>
+          <div class="path-amount"><strong>${p.flow}</strong> unid.</div>
+        </div>`;
+      });
+      html += `</div>
+        <div class="path-total">
+          <strong>Σ Flujo total = ${decomposition.reduce((s,p)=>s+p.flow,0)} unidades</strong> ${decomposition.reduce((s,p)=>s+p.flow,0) === result.maxFlow ? '✓' : ''}
+        </div>
+      </div>`;
+    }
+  }
+
+  // Mín-corte
+  if(result.minCutArcs.length > 0){
+    html += `<div class="mincut-block">
+      <h4>Mín-corte (s, t) — Teorema máx-flujo / mín-corte</h4>
+      <p style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px;">
+        Los siguientes arcos forman el corte mínimo que separa la fuente <strong style="color:var(--navy);">${result.srcName}</strong> del sumidero <strong style="color:var(--navy);">${result.snkName}</strong>. La suma de sus capacidades es igual al flujo máximo:
+      </p>`;
+    result.minCutArcs.forEach(a => {
+      html += `<span class="mincut-arc">(${a.from} <strong>→</strong> ${a.to}) &nbsp; cap = ${a.cap}</span>`;
+    });
+    const sum = result.minCutArcs.reduce((s, a) => s + a.cap, 0);
+    html += `<div style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--navy);">
+      <strong>Σ capacidades del corte = ${sum} = flujo máximo ✓</strong>
+    </div></div>`;
+  }
+
+  out.innerHTML = html;
+}
+
+function renderIterationBlock(iter){
+  const pathStr = iter.pathNodes.map(n =>
+    `<span style="display:inline-block;padding:2px 10px;background:var(--navy);color:var(--gold-light);border-radius:14px;font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700;font-style:normal;">${n}</span>`
+  ).join('<span class="arrow">→</span>');
+
+  let html = `<div class="iter-block">
+    <div class="iter-header">
+      <div class="iter-title">Iteración <em>${iter.iterNum}</em></div>
+      <div class="iter-tag">+${iter.bottleneck} flujo</div>
+    </div>
+    <div class="iter-body">`;
+
+  html += `<div class="path-display">${pathStr}</div>`;
+
+  html += `<div class="iter-info-grid">
+    <div class="iter-info-cell">
+      <div class="iter-info-label">▸ Cuello de botella</div>
+      <div class="iter-info-value">Δf = ${iter.bottleneck}</div>
+    </div>
+    <div class="iter-info-cell">
+      <div class="iter-info-label">▸ Flujo acumulado</div>
+      <div class="iter-info-value">f = ${iter.cumulativeFlow}</div>
+    </div>
+    <div class="iter-info-cell">
+      <div class="iter-info-label">▸ Longitud del camino</div>
+      <div class="iter-info-value">${iter.pathInfo.length} arcos</div>
+    </div>
+  </div>`;
+
+  // Cálculo del bottleneck en detalle
+  html += `<div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink);background:var(--paper-2);border-left:3px solid var(--gold);padding:10px 14px;margin-bottom:12px;line-height:1.7;">
+    <strong style="color:var(--navy);">Cálculo del cuello de botella:</strong><br>`;
+  iter.pathInfo.forEach(p => {
+    const arrow = p.isReverse ? '⇐ (residual inverso)' : '→';
+    html += `&nbsp;&nbsp;${p.from} ${arrow} ${p.to}: residual = ${p.residualBefore}<br>`;
+  });
+  html += `&nbsp;&nbsp;<strong>Δf = mín(${iter.pathInfo.map(p => p.residualBefore).join(', ')}) = ${iter.bottleneck}</strong>
+  </div>`;
+
+  // Tabla del estado de la red residual tras este aumento
+  html += `<div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:0.16em;text-transform:uppercase;font-weight:700;margin-bottom:6px;">
+    ▸ Estado de la red tras la iteración
+  </div>`;
+  html += `<div class="residual-wrap"><table class="residual-table">
+    <thead><tr>
+      <th>Arco</th><th>Cap.</th><th>Flujo f</th>
+      <th>Cap. residual c-f</th><th>Residual inversa</th>
+    </tr></thead><tbody>`;
+  iter.edgeSnapshot.forEach(es => {
+    const cls = es.inPath ? 'in-path' : '';
+    html += `<tr class="${cls}">
+      <td><strong>${es.from} → ${es.to}</strong></td>
+      <td>${es.cap}</td>
+      <td>${es.flow}</td>
+      <td>${es.residual}</td>
+      <td>${es.residualReverse}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  html += `</div></div>`;
+  return html;
+}
+
+// =====================================================================
+//  ACCIONES PRINCIPALES
+// =====================================================================
+
+document.getElementById('solve-btn').addEventListener('click', () => {
+  if(state.nodes.length < 2){
+    alert('La red debe tener al menos 2 nodos.');
+    return;
+  }
+  if(state.edges.length === 0){
+    alert('La red debe tener al menos un arco.');
+    return;
+  }
+  const srcId = +sourceSelect.value;
+  const snkId = +sinkSelect.value;
+  if(srcId === snkId){
+    alert('La fuente y el sumidero deben ser nodos distintos.');
+    return;
+  }
+
+  // Reiniciar flujos antes de resolver
+  state.edges.forEach(e => e.flow = 0);
+  // Limpiar marcas de iteración anterior
+  state.edges.forEach(e => e.pathActive = false);
+  state.nodes.forEach(n => n.inPath = false);
+
+  const result = edmondsKarp(srcId, snkId);
+  updateTable();
+  render();
+  renderResults(result);
+  document.querySelector('.panel-right').scrollTop = 0;
+});
+
+document.getElementById('clear-btn').addEventListener('click', () => {
+  if(state.nodes.length === 0) return;
+  if(!confirm('¿Eliminar toda la red? Esta acción no se puede deshacer.')) return;
+  state.nodes = [];
+  state.edges = [];
+  state.nextNodeId = 0;
+  selectedNodeForEdge = null;
+  refreshSelectors();
+  updateTable();
+  render();
+  document.getElementById('results').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">∇</div>
+      <h3>Esperando la red</h3>
+      <p>Construya la red en el lienzo superior agregando nodos y arcos, defina la <strong>fuente</strong> y el <strong>sumidero</strong>, y pulse <strong>Resolver</strong>.</p>
+    </div>`;
+});
+
+document.getElementById('example-btn').addEventListener('click', () => {
+  loadExample();
+});
+
+function loadExample(){
+  // Ejemplo clásico de Hillier-Lieberman: red Seervada Park (transporte)
+  state.nodes = [
+    {id:0, name:'O', x:120, y:300},   // origen (fuente)
+    {id:1, name:'A', x:340, y:140},
+    {id:2, name:'B', x:340, y:300},
+    {id:3, name:'C', x:340, y:460},
+    {id:4, name:'D', x:620, y:200},
+    {id:5, name:'E', x:620, y:400},
+    {id:6, name:'T', x:880, y:300}    // destino (sumidero)
+  ];
+  state.nextNodeId = 7;
+  state.edges = [
+    {from:0, to:1, cap:5, flow:0},
+    {from:0, to:2, cap:7, flow:0},
+    {from:0, to:3, cap:4, flow:0},
+    {from:1, to:2, cap:1, flow:0},
+    {from:1, to:4, cap:3, flow:0},
+    {from:2, to:4, cap:2, flow:0},
+    {from:2, to:5, cap:5, flow:0},
+    {from:3, to:5, cap:4, flow:0},
+    {from:4, to:5, cap:1, flow:0},
+    {from:4, to:6, cap:9, flow:0},
+    {from:5, to:6, cap:6, flow:0}
+  ];
+  refreshSelectors();
+  sourceSelect.value = 0;
+  sinkSelect.value = 6;
+  updateTable();
+  render();
+  // Limpiar resultados al cargar ejemplo nuevo
+  document.getElementById('results').innerHTML = `
+    <div class="empty-state">
+      <div class="icon">∇</div>
+      <h3>Ejemplo cargado</h3>
+      <p>Red de transporte de <strong>Hillier-Lieberman</strong> (Seervada Park). Pulse <strong>Resolver</strong> para ejecutar Edmonds-Karp y ver las iteraciones del algoritmo.</p>
+    </div>`;
+}
+
+// ---------- Inicialización ----------
+loadExample();
+</script>
+</body>
+</html>

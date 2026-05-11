@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cadenas de Markov — Investigación de Operaciones</title>
+<style>
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Italic.woff2') format('woff2');font-weight:500;font-style:italic;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+
+:root{
+  --paper:#f8f6f1;--paper-2:#efe9dc;--paper-3:#d9d0bd;
+  --ink:#0a1628;--navy:#11213f;--navy-light:#2d4272;
+  --gold:#b38a2f;--gold-light:#d4b05a;--gold-soft:#e7d7aa;
+  --muted:#5b6478;--success:#2a5a3a;--error:#8a2a2a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{min-height:100vh;background-image:radial-gradient(circle at 15% 10%,rgba(17,33,63,.045),transparent 48%),radial-gradient(circle at 85% 90%,rgba(179,138,47,.055),transparent 50%);}
+header.masthead{border-bottom:3px double var(--navy);padding:30px 48px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:36px;align-items:end;background:var(--paper);position:relative;}
+header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+.brand{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;border:1.5px solid var(--navy);padding:9px 16px;background:var(--navy);color:var(--paper);}
+.title-block h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(36px,5vw,62px);font-weight:400;line-height:.95;letter-spacing:-.015em;color:var(--navy);}
+.title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+.subtitle{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;letter-spacing:.18em;color:var(--muted);margin-top:10px;text-transform:uppercase;}
+.meta{text-align:right;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
+.meta strong{display:block;color:var(--navy);font-size:11px;font-weight:700;}
+main{display:flex;flex-direction:column;min-height:calc(100vh - 130px);}
+.panel-top{border-bottom:3px double var(--navy);padding:32px 42px 34px;background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);overflow-x:auto;position:relative;}
+.panel-top::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--gold);}
+.panel-bottom{padding:36px 44px 60px;background:var(--paper);}
+.section-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:10px;font-weight:700;}
+.section-label::before{content:"§";font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);font-style:italic;}
+.section-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:500;color:var(--navy);margin-bottom:22px;line-height:1.1;}
+.config-grid{display:grid;grid-template-columns:repeat(4,minmax(230px,1fr));gap:16px;margin-bottom:26px;}
+.config-row{display:flex;align-items:center;gap:14px;padding:16px 18px;background:rgba(248,246,241,.82);border:1px solid var(--paper-3);border-left:3px solid var(--navy);}
+.config-row label{font-size:14px;flex:1;color:var(--navy);font-weight:600;}
+.config-row input,.config-row select{font-family:'JetBrains Mono','Consolas',monospace;font-size:13px;padding:8px 12px;border:1.5px solid var(--navy);background:var(--paper);color:var(--navy);min-width:100px;text-align:center;font-weight:700;}
+.model-card{border:1.5px solid var(--navy);background:var(--paper);padding:22px;box-shadow:4px 4px 0 rgba(179,138,47,.35);margin-top:10px;}
+.table-scroll{overflow-x:auto;padding-bottom:8px;}
+.input-table,.result-table{border-collapse:collapse;min-width:900px;width:100%;font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;}
+.input-table th,.result-table th{background:var(--navy);color:var(--paper);padding:10px 12px;border-right:1px solid rgba(212,176,90,.35);border-bottom:2px solid var(--gold);text-align:center;white-space:nowrap;}
+.input-table th.soft,.result-table th.soft{background:var(--gold-soft);color:var(--navy);}
+.input-table td,.result-table td{border:1px solid var(--paper-3);padding:8px;text-align:center;background:var(--paper);color:var(--ink);font-weight:600;}
+.input-table td.label,.result-table td.label{background:var(--paper-2);color:var(--navy);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:700;font-style:italic;}
+.cell-input{width:82px;padding:8px 7px;border:1.4px solid var(--navy);background:var(--paper);color:var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-weight:700;text-align:center;}
+.name-input{width:140px;text-align:left;}
+.actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
+.solve-btn,.example-btn{padding:17px 24px;cursor:pointer;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .25s ease;}
+.solve-btn{background:var(--navy);color:var(--paper);border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);}
+.solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);color:var(--navy);}
+.example-btn{background:transparent;color:var(--navy);border:1px dashed var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;}
+.example-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;}
+.metric{border:2px solid var(--navy);background:var(--navy);color:var(--paper);box-shadow:5px 5px 0 var(--gold);padding:22px;position:relative;}
+.metric-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-light);font-weight:700;}
+.metric-value{font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;color:var(--paper);line-height:1;margin-top:8px;}
+.metric-value em{color:var(--gold-light);font-style:italic;}
+.note-card{background:var(--paper-2);border:1.5px solid var(--navy);border-left:5px solid var(--gold);padding:22px 24px;box-shadow:4px 4px 0 var(--gold-soft);margin-bottom:26px;}
+.note-card h4{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:var(--navy);font-weight:500;margin-bottom:10px;border-bottom:1px solid var(--gold);padding-bottom:8px;}
+.note-card p{font-size:14px;line-height:1.7;color:var(--ink);}
+.result-table td.high{background:rgba(212,176,90,.24);border:2px solid var(--gold);font-weight:900;color:var(--navy);}
+.result-table td.medium{background:rgba(17,33,63,.06);}
+.result-table td.stationary{background:rgba(42,90,58,.13);border:2px solid var(--success);font-weight:900;color:var(--navy);}
+.graph-wrap{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 rgba(179,138,47,.28);padding:18px;overflow-x:auto;margin-bottom:30px;}
+svg.markov-graph{width:100%;min-width:980px;height:560px;background:linear-gradient(180deg,rgba(248,246,241,.9),rgba(239,233,220,.35));}
+.node circle{fill:var(--paper);stroke:var(--navy);stroke-width:2.5;}
+.node.active circle{fill:rgba(212,176,90,.24);stroke:var(--gold);stroke-width:4;}
+.node text{font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:700;fill:var(--navy);font-style:italic;text-anchor:middle;dominant-baseline:middle;}
+.node .prob{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;fill:var(--muted);font-style:normal;font-weight:700;text-anchor:middle;dominant-baseline:auto;}
+.arc{stroke:rgba(17,33,63,.25);fill:none;marker-end:url(#arrow);}
+.arc.strong{stroke:var(--gold);}
+.arc-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;fill:var(--navy);font-weight:700;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round;}
+.chart-line{fill:none;stroke-width:3;}
+.axis{stroke:var(--navy);stroke-width:2;}
+.grid{stroke:rgba(17,33,63,.12);stroke-width:1;}
+.chart-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;fill:var(--navy);font-weight:700;paint-order:stroke;stroke:var(--paper);stroke-width:4px;}
+.iter-block{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 var(--gold-soft);margin-bottom:26px;overflow:hidden;}
+.iter-header{background:var(--navy);color:var(--paper);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);}
+.iter-title{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:23px;font-weight:500;}
+.iter-title em{color:var(--gold-light);font-style:italic;}
+.iter-tag{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;background:var(--gold);color:var(--navy);padding:5px 12px;font-weight:800;text-transform:uppercase;}
+.iter-body{padding:20px 22px;}
+.step-text{background:var(--paper-2);border-left:3px solid var(--gold);padding:14px 18px;margin-bottom:14px;font-size:13px;line-height:1.65;color:var(--ink);}
+.step-text code{font-family:'JetBrains Mono','Consolas',monospace;background:var(--paper);padding:2px 8px;border:1px solid var(--paper-3);color:var(--navy);font-weight:700;font-size:12px;}
+.empty-state{text-align:center;padding:85px 20px;color:var(--muted);}
+.empty-state .icon{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:130px;line-height:1;color:var(--gold);opacity:.35;margin-bottom:20px;font-weight:300;}
+.empty-state h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:29px;font-weight:500;color:var(--navy);margin-bottom:10px;}
+.empty-state p{font-size:14px;line-height:1.7;max-width:560px;margin:0 auto;color:var(--muted);}
+.error-msg{border:2px solid var(--error);background:rgba(138,42,42,.055);padding:18px 22px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;}
+.error-msg strong{display:block;color:var(--error);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;margin-bottom:6px;font-weight:700;}
+footer{border-top:3px double var(--navy);padding:20px 48px;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;background:var(--paper);position:relative;}
+footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+@media(max-width:1100px){header.masthead{grid-template-columns:1fr;align-items:start;gap:16px}.meta{text-align:left}.config-grid,.summary-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.config-grid,.summary-grid{grid-template-columns:1fr}.panel-top,.panel-bottom{padding-left:22px;padding-right:22px}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">IO · MARKOV</div>
+  <div class="title-block">
+    <h1>Cadenas de <em>Markov</em></h1>
+    <div class="subtitle">Matriz de transición · Estado estacionario · Grafo probabilístico</div>
+  </div>
+  <div class="meta"><strong>Investigación de Operaciones</strong>Dr. Carlos Miguel López Martínez· Oaxaca<br>Edición Académica · 2026</div>
+</header>
+
+<main>
+  <section class="panel-top">
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Definir la cadena de Markov</h2>
+    <div class="config-grid">
+      <div class="config-row"><label>Número de estados</label><input type="number" id="num-states" min="2" max="8" value="3"></div>
+      <div class="config-row"><label>Número de periodos</label><input type="number" id="periods" min="1" max="50" value="10"></div>
+      <div class="config-row"><label>Tolerancia estacionaria</label><input type="number" id="tolerance" step="any" value="0.000001"></div>
+      <div class="config-row"><label>Vista del grafo</label><select id="graph-view"><option value="all">Todas las transiciones</option><option value="strong">Solo fuertes</option></select></div>
+    </div>
+
+    <div class="section-label">Estados, vector inicial y matriz de transición</div>
+    <div class="model-card">
+      <div class="table-scroll" id="matrix-container"></div>
+      <div class="actions">
+        <button class="solve-btn" id="solve-btn">Resolver Markov</button>
+        <button class="example-btn" id="example-btn">↻ Cargar ejemplo</button>
+        <button class="example-btn" id="normalize-btn">Normalizar renglones</button>
+        <button class="example-btn" id="clear-btn">Limpiar</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-bottom">
+    <div id="results">
+      <div class="empty-state"><div class="icon">P</div><h3>Esperando la matriz de transición</h3><p>Capture la matriz P y el vector inicial π₀. Cada renglón de P debe sumar 1.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer><div>Cadenas de Markov · Dr. Carlos Miguel López Martínez · Mayo 2026</div><div>πₙ = π₀Pⁿ · πP = π</div></footer>
+
+<script>
+const EPS=1e-9;
+const numStatesInput=document.getElementById('num-states');
+const matrixContainer=document.getElementById('matrix-container');
+const results=document.getElementById('results');
+
+function fmt(v){if(!isFinite(v))return '—';if(Math.abs(v)<1e-10)return '0';return Number(v.toFixed(6)).toString();}
+function pct(v){return (v*100).toFixed(2)+'%';}
+function clamp(input,min,max){let v=parseInt(input.value);if(isNaN(v)||v<min)v=min;if(v>max)v=max;input.value=v;return v;}
+function resetResults(){results.innerHTML='<div class="empty-state"><div class="icon">P</div><h3>Esperando la matriz de transición</h3><p>Capture la matriz P y el vector inicial π₀. Cada renglón de P debe sumar 1.</p></div>';}
+
+function buildMatrix(){
+  const oldNames=[...document.querySelectorAll('.state-name')].map(x=>({i:+x.dataset.i,v:x.value}));
+  const oldPi=[...document.querySelectorAll('.pi-input')].map(x=>({i:+x.dataset.i,v:x.value}));
+  const oldP=[...document.querySelectorAll('.p-input')].map(x=>({i:+x.dataset.i,j:+x.dataset.j,v:x.value}));
+  const getName=i=>oldNames.find(x=>x.i===i)?.v||`E${i+1}`;
+  const getPi=i=>oldPi.find(x=>x.i===i)?.v||'';
+  const getP=(i,j)=>oldP.find(x=>x.i===i&&x.j===j)?.v||'';
+  const n=clamp(numStatesInput,2,8);
+  let html='<table class="input-table"><thead><tr><th>Estado / Hacia</th><th class="soft">π₀</th>';
+  for(let j=0;j<n;j++) html+=`<th><input class="cell-input name-input state-name" data-i="${j}" value="${getName(j)}"></th>`;
+  html+='<th class="soft">Σ renglón</th></tr></thead><tbody>';
+  for(let i=0;i<n;i++){
+    html+=`<tr><td class="label"><input class="cell-input name-input state-name" data-i="${i}" value="${getName(i)}"></td><td><input class="cell-input pi-input" type="number" step="any" data-i="${i}" value="${getPi(i)}" placeholder="π${i+1}"></td>`;
+    for(let j=0;j<n;j++) html+=`<td><input class="cell-input p-input" type="number" step="any" min="0" max="1" data-i="${i}" data-j="${j}" value="${getP(i,j)}" placeholder="p${i+1}${j+1}"></td>`;
+    html+='<td class="soft">auto</td></tr>';
+  }
+  html+='</tbody></table>';
+  matrixContainer.innerHTML=html;
+}
+
+numStatesInput.addEventListener('change',()=>{buildMatrix();resetResults();});
+document.getElementById('periods').addEventListener('input',resetResults);
+document.getElementById('graph-view').addEventListener('change',resetResults);
+
+function readModel(){
+  const n=parseInt(numStatesInput.value);
+  const periods=parseInt(document.getElementById('periods').value);
+  const tolerance=parseFloat(document.getElementById('tolerance').value);
+  if(isNaN(periods)||periods<1) throw new Error('El número de periodos debe ser mayor o igual que 1.');
+  if(isNaN(tolerance)||tolerance<=0) throw new Error('La tolerancia debe ser mayor que cero.');
+  const nameInputs=[...document.querySelectorAll('.state-name')].filter((_,idx)=>idx<n);
+  const states=nameInputs.map((x,i)=>x.value.trim()||`E${i+1}`);
+  const pi=Array(n).fill(0);
+  document.querySelectorAll('.pi-input').forEach(inp=>{
+    const v=parseFloat(inp.value);
+    if(isNaN(v)||v<0) throw new Error(`La probabilidad inicial de ${states[+inp.dataset.i]} debe ser no negativa.`);
+    pi[+inp.dataset.i]=v;
+  });
+  const piSum=pi.reduce((a,b)=>a+b,0);
+  if(Math.abs(piSum-1)>1e-6) throw new Error(`El vector inicial π₀ debe sumar 1. Actualmente suma ${fmt(piSum)}.`);
+  const P=Array.from({length:n},()=>Array(n).fill(0));
+  document.querySelectorAll('.p-input').forEach(inp=>{
+    const v=parseFloat(inp.value);
+    if(isNaN(v)||v<0||v>1) throw new Error(`La transición p${+inp.dataset.i+1}${+inp.dataset.j+1} debe estar entre 0 y 1.`);
+    P[+inp.dataset.i][+inp.dataset.j]=v;
+  });
+  for(let i=0;i<n;i++){
+    const s=P[i].reduce((a,b)=>a+b,0);
+    if(Math.abs(s-1)>1e-6) throw new Error(`El renglón ${states[i]} debe sumar 1. Actualmente suma ${fmt(s)}.`);
+  }
+  return {n,states,pi,P,periods,tolerance};
+}
+
+function normalizeRows(){
+  const n=parseInt(numStatesInput.value);
+  for(let i=0;i<n;i++){
+    const inputs=[...document.querySelectorAll(`.p-input[data-i="${i}"]`)];
+    const vals=inputs.map(inp=>parseFloat(inp.value)||0);
+    const s=vals.reduce((a,b)=>a+b,0);
+    if(s>0) inputs.forEach((inp,j)=>inp.value=fmt(vals[j]/s));
+  }
+  const piInputs=[...document.querySelectorAll('.pi-input')];
+  const piVals=piInputs.map(inp=>parseFloat(inp.value)||0);
+  const ps=piVals.reduce((a,b)=>a+b,0);
+  if(ps>0) piInputs.forEach((inp,i)=>inp.value=fmt(piVals[i]/ps));
+  resetResults();
+}
+
+function multiplyVectorMatrix(v,M){
+  const n=v.length;
+  const out=Array(n).fill(0);
+  for(let j=0;j<n;j++) for(let i=0;i<n;i++) out[j]+=v[i]*M[i][j];
+  return out;
+}
+function matrixPower(P,power){
+  const n=P.length;
+  let R=Array.from({length:n},(_,i)=>Array.from({length:n},(_,j)=>i===j?1:0));
+  let A=P.map(r=>[...r]);
+  let k=power;
+  while(k>0){
+    if(k%2===1) R=multiplyMatrices(R,A);
+    A=multiplyMatrices(A,A);
+    k=Math.floor(k/2);
+  }
+  return R;
+}
+function multiplyMatrices(A,B){
+  const n=A.length;
+  const C=Array.from({length:n},()=>Array(n).fill(0));
+  for(let i=0;i<n;i++) for(let j=0;j<n;j++) for(let k=0;k<n;k++) C[i][j]+=A[i][k]*B[k][j];
+  return C;
+}
+function distance(a,b){return Math.max(...a.map((x,i)=>Math.abs(x-b[i])));}
+
+function solveMarkov(model){
+  const history=[model.pi];
+  let current=model.pi;
+  for(let t=1;t<=model.periods;t++){
+    current=multiplyVectorMatrix(current,model.P);
+    history.push(current);
+  }
+  let stationary=model.pi;
+  let stationaryIterations=0;
+  for(let i=0;i<10000;i++){
+    const next=multiplyVectorMatrix(stationary,model.P);
+    stationaryIterations=i+1;
+    if(distance(next,stationary)<=model.tolerance){stationary=next;break;}
+    stationary=next;
+  }
+  const Pn=matrixPower(model.P,model.periods);
+  const classification=classifyStates(model.P);
+  return {history,stationary,stationaryIterations,Pn,classification};
+}
+
+function classifyStates(P){
+  const n=P.length;
+  return P.map((row,i)=>{
+    if(Math.abs(row[i]-1)<1e-9) return 'Absorbente';
+    if(row.some((v,j)=>j!==i&&v>EPS)) return 'Transición';
+    return 'Aislado';
+  });
+}
+
+function renderResults(model,result){
+  const final=result.history[result.history.length-1];
+  const maxIdx=final.reduce((best,v,i)=>v>final[best]?i:best,0);
+  let html=`<div class="summary-grid">
+    <div class="metric"><div class="metric-label">Estados</div><div class="metric-value"><em>${model.n}</em></div></div>
+    <div class="metric"><div class="metric-label">Periodos</div><div class="metric-value"><em>${model.periods}</em></div></div>
+    <div class="metric"><div class="metric-label">Estado más probable</div><div class="metric-value"><em>${model.states[maxIdx]}</em></div></div>
+    <div class="metric"><div class="metric-label">Probabilidad</div><div class="metric-value"><em>${pct(final[maxIdx])}</em></div></div>
+  </div>`;
+  html+=`<div class="note-card"><h4>Interpretación</h4><p>Después de <strong>${model.periods}</strong> periodos, el estado con mayor probabilidad es <strong>${model.states[maxIdx]}</strong>, con probabilidad aproximada de <strong>${pct(final[maxIdx])}</strong>.</p><p style="margin-top:8px;">El estado estacionario se aproximó en <strong>${result.stationaryIterations}</strong> iteraciones usando multiplicación sucesiva de vectores.</p></div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:30px 0 14px;">Grafo probabilístico</div><div class="graph-wrap">${renderGraph(model,final)}</div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Evolución temporal</div><div class="graph-wrap">${renderChart(model,result.history)}</div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Vector inicial, final y estacionario</div>${renderVectors(model,result)}`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Matriz P y potencia Pⁿ</div>${renderMatrices(model,result)}`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Iteraciones πₙ = πₙ₋₁P</div>${renderIterations(model,result.history)}`;
+  html+=renderReferences();
+  results.innerHTML=html;
+  document.querySelector('.panel-bottom').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderGraph(model,vector){
+  const W=1100,H=560,cx=550,cy=280,r=190;
+  const view=document.getElementById('graph-view').value;
+  const pos=model.states.map((_,i)=>{const ang=-Math.PI/2+2*Math.PI*i/model.n;return {x:cx+r*Math.cos(ang),y:cy+r*Math.sin(ang)};});
+  let svg=`<svg class="markov-graph" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#b38a2f" /></marker></defs>`;
+  for(let i=0;i<model.n;i++){
+    for(let j=0;j<model.n;j++){
+      const p=model.P[i][j];
+      if(p<=EPS) continue;
+      if(view==='strong'&&p<0.25) continue;
+      const a=pos[i],b=pos[j];
+      const width=1+6*p;
+      const strong=p>=0.4;
+      if(i===j){
+        svg+=`<path class="arc ${strong?'strong':''}" stroke-width="${width}" d="M ${a.x+28} ${a.y-30} C ${a.x+90} ${a.y-95}, ${a.x-90} ${a.y-95}, ${a.x-28} ${a.y-30}"/>`;
+        svg+=`<text class="arc-label" x="${a.x}" y="${a.y-92}">${fmt(p)}</text>`;
+      }else{
+        const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+        const dx=b.x-a.x,dy=b.y-a.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+        const sx=a.x+dx/len*42,sy=a.y+dy/len*42,tx=b.x-dx/len*42,ty=b.y-dy/len*42;
+        const ox=-dy/len*25,oy=dx/len*25;
+        svg+=`<path class="arc ${strong?'strong':''}" stroke-width="${width}" d="M ${sx} ${sy} Q ${mx+ox} ${my+oy} ${tx} ${ty}"/>`;
+        svg+=`<text class="arc-label" x="${mx+ox}" y="${my+oy-6}">${fmt(p)}</text>`;
+      }
+    }
+  }
+  model.states.forEach((name,i)=>{
+    const p=pos[i];
+    const active=vector[i]===Math.max(...vector);
+    svg+=`<g class="node ${active?'active':''}"><circle cx="${p.x}" cy="${p.y}" r="42"/><text x="${p.x}" y="${p.y-5}">${name}</text><text class="prob" x="${p.x}" y="${p.y+58}">${pct(vector[i])}</text></g>`;
+  });
+  svg+='</svg>';
+  return svg;
+}
+
+function renderChart(model,history){
+  const W=1100,H=520,pad=70;
+  const colors=['#11213f','#b38a2f','#2a5a3a','#8a2a2a','#2d4272','#7c5c2e','#5b6478','#000000'];
+  let svg=`<svg class="markov-graph" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  for(let i=0;i<=5;i++){const y=pad+i*(H-2*pad)/5;svg+=`<line class="grid" x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}"/>`;}
+  for(let i=0;i<=Math.min(history.length-1,10);i++){const x=pad+i*(W-2*pad)/Math.max(1,history.length-1);svg+=`<line class="grid" x1="${x}" y1="${pad}" x2="${x}" y2="${H-pad}"/>`;}
+  svg+=`<line class="axis" x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}"/><line class="axis" x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}"/>`;
+  model.states.forEach((name,s)=>{
+    const pts=history.map((v,t)=>({x:pad+t*(W-2*pad)/Math.max(1,history.length-1),y:H-pad-v[s]*(H-2*pad)}));
+    const d=pts.map((p,i)=>(i?'L':'M')+` ${p.x} ${p.y}`).join(' ');
+    svg+=`<path class="chart-line" stroke="${colors[s%colors.length]}" d="${d}"/>`;
+    const last=pts[pts.length-1];
+    svg+=`<text class="chart-label" x="${last.x+8}" y="${last.y}">${name}</text>`;
+  });
+  svg+=`<text class="chart-label" x="${W/2}" y="${H-18}">Periodo n</text><text class="chart-label" x="24" y="${pad-20}">Probabilidad</text>`;
+  svg+='</svg>';
+  return svg;
+}
+
+function renderVectors(model,result){
+  const final=result.history[result.history.length-1];
+  let html='<div class="table-scroll"><table class="result-table"><thead><tr><th>Estado</th><th>π₀</th><th>πₙ</th><th class="soft">π estacionario</th><th>Clasificación</th></tr></thead><tbody>';
+  model.states.forEach((s,i)=>{
+    html+=`<tr><td class="label">${s}</td><td>${fmt(model.pi[i])}</td><td class="${final[i]===Math.max(...final)?'high':''}">${fmt(final[i])}</td><td class="stationary">${fmt(result.stationary[i])}</td><td>${result.classification[i]}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+function renderMatrices(model,result){
+  return `<div class="note-card"><h4>Potencia matricial</h4><p>El vector después de ${model.periods} periodos también puede obtenerse como <strong>πₙ = π₀Pⁿ</strong>.</p></div>${renderMatrix(model,'Matriz P',model.P)}${renderMatrix(model,`Matriz P^${model.periods}`,result.Pn)}`;
+}
+function renderMatrix(model,title,M){
+  let html=`<div class="table-scroll" style="margin-bottom:18px;"><table class="result-table"><thead><tr><th>${title}</th>`;
+  model.states.forEach(s=>html+=`<th>${s}</th>`);
+  html+='</tr></thead><tbody>';
+  M.forEach((row,i)=>{
+    html+=`<tr><td class="label">${model.states[i]}</td>`;
+    row.forEach(v=>html+=`<td class="${v>=0.4?'high':v>=0.15?'medium':''}">${fmt(v)}</td>`);
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+function renderIterations(model,history){
+  let html='';
+  history.forEach((v,t)=>{
+    if(t===0) return;
+    html+=`<div class="iter-block"><div class="iter-header"><div class="iter-title">Iteración <em>${t}</em></div><div class="iter-tag">π${t} = π${t-1}P</div></div><div class="iter-body"><div class="step-text">Se multiplica el vector del periodo anterior por la matriz de transición.</div>`;
+    html+='<div class="table-scroll"><table class="result-table"><thead><tr>';
+    model.states.forEach(s=>html+=`<th>${s}</th>`);
+    html+='</tr></thead><tbody><tr>';
+    v.forEach(x=>html+=`<td>${fmt(x)}</td>`);
+    html+='</tr></tbody></table></div></div></div>';
+  });
+  return html;
+}
+function renderReferences(){
+  return `<div class="note-card"><h4>Referencias académicas</h4><p><strong>Fundamento:</strong> una cadena de Markov en tiempo discreto modela un sistema en el cual la probabilidad del siguiente estado depende únicamente del estado actual.</p><p><strong>Fórmulas implementadas:</strong> πₙ = π₀Pⁿ y πP = π para aproximar el estado estacionario.</p><p><strong>Bibliografía sugerida:</strong> Taha, <em>Investigación de Operaciones</em>; Hillier y Lieberman, <em>Introducción a la Investigación de Operaciones</em>; Ross, <em>Introduction to Probability Models</em>.</p></div>`;
+}
+
+function solve(){
+  try{const model=readModel();const result=solveMarkov(model);renderResults(model,result);}catch(err){results.innerHTML=`<div class="error-msg"><strong>Datos incompletos o inconsistentes</strong>${err.message}</div>`;}
+}
+
+document.getElementById('solve-btn').addEventListener('click',solve);
+document.getElementById('normalize-btn').addEventListener('click',normalizeRows);
+document.getElementById('clear-btn').addEventListener('click',()=>{document.querySelectorAll('.pi-input,.p-input').forEach(i=>i.value='');resetResults();});
+document.getElementById('example-btn').addEventListener('click',()=>{
+  numStatesInput.value=3;document.getElementById('periods').value=10;buildMatrix();
+  const names=['Soleado','Nublado','Lluvioso'];
+  const pi=[1,0,0];
+  const P=[[0.7,0.2,0.1],[0.3,0.4,0.3],[0.2,0.5,0.3]];
+  names.forEach((name,i)=>document.querySelectorAll('.state-name')[i].value=name);
+  pi.forEach((v,i)=>document.querySelector(`.pi-input[data-i="${i}"]`).value=v);
+  P.forEach((row,i)=>row.forEach((v,j)=>document.querySelector(`.p-input[data-i="${i}"][data-j="${j}"]`).value=v));
+  solve();
+});
+
+function runSelfTests(){
+  const v=multiplyVectorMatrix([1,0],[ [0.5,0.5],[0.2,0.8] ]);
+  console.assert(Math.abs(v[0]-0.5)<1e-9&&Math.abs(v[1]-0.5)<1e-9,'Test Markov: multiplicación vector matriz');
+  const P2=matrixPower([[0.5,0.5],[0.2,0.8]],2);
+  console.assert(Math.abs(P2[0][0]-0.35)<1e-9,'Test Markov: potencia P^2');
+}
+
+buildMatrix();
+//document.getElementById('example-btn').click();
+runSelfTests();
+</script>
+</body>
+</html>

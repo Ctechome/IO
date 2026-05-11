@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Modelo de Transporte — Investigación de Operaciones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f8f6f1;
+  --paper-2:#efe9dc;
+  --paper-3:#d9d0bd;
+  --ink:#0a1628;
+  --navy:#11213f;
+  --navy-light:#2d4272;
+  --gold:#b38a2f;
+  --gold-light:#d4b05a;
+  --gold-soft:#e7d7aa;
+  --muted:#5b6478;
+  --grid:#d8d4c4;
+  --error:#8a2a2a;
+  --success:#2a5a3a;
+  --accent:#7c5c2e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,sans-serif;}
+body{
+  min-height:100vh;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(17,33,63,0.045), transparent 48%),
+    radial-gradient(circle at 85% 90%, rgba(179,138,47,0.055), transparent 50%);
+}
+header.masthead{
+  border-bottom:3px double var(--navy);
+  padding:30px 48px 24px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:36px;
+  align-items:end;
+  background:var(--paper);
+  position:relative;
+}
+header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+.brand{
+  font-family:'Cormorant Garamond',serif;
+  font-weight:600;
+  font-size:13px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  border:1.5px solid var(--navy);
+  padding:9px 16px;
+  background:var(--navy);
+  color:var(--paper);
+}
+.title-block h1{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(36px,5vw,62px);
+  font-weight:400;
+  line-height:.95;
+  letter-spacing:-.015em;
+  color:var(--navy);
+}
+.title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+.subtitle{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  letter-spacing:.18em;
+  color:var(--muted);
+  margin-top:10px;
+  text-transform:uppercase;
+}
+.meta{text-align:right;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
+.meta strong{display:block;color:var(--navy);font-size:11px;font-weight:700;}
+main{display:flex;flex-direction:column;min-height:calc(100vh - 130px);}
+.panel-top{
+  border-bottom:3px double var(--navy);
+  padding:32px 42px 34px;
+  background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);
+  overflow-x:auto;
+  position:relative;
+}
+.panel-top::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--gold);}
+.panel-bottom{padding:36px 44px 60px;background:var(--paper);}
+.section-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:.22em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:700;
+}
+.section-label::before{content:"§";font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold);font-style:italic;}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:500;color:var(--navy);margin-bottom:22px;line-height:1.1;}
+.config-grid{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px;margin-bottom:26px;}
+.config-row{display:flex;align-items:center;gap:14px;padding:16px 18px;background:rgba(248,246,241,.82);border:1px solid var(--paper-3);border-left:3px solid var(--navy);}
+.config-row label{font-size:14px;flex:1;color:var(--navy);font-weight:600;}
+.config-row input,.config-row select{
+  font-family:'JetBrains Mono',monospace;
+  font-size:13px;
+  padding:8px 12px;
+  border:1.5px solid var(--navy);
+  background:var(--paper);
+  color:var(--navy);
+  min-width:92px;
+  text-align:center;
+  font-weight:700;
+}
+.config-row input:focus,.config-row select:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.model-card{
+  border:1.5px solid var(--navy);
+  background:var(--paper);
+  padding:22px;
+  box-shadow:4px 4px 0 rgba(179,138,47,.35);
+  margin-top:10px;
+}
+.table-scroll{overflow-x:auto;padding-bottom:8px;}
+.input-table{border-collapse:collapse;min-width:760px;width:100%;font-family:'JetBrains Mono',monospace;font-size:12px;}
+.input-table th{
+  background:var(--navy);
+  color:var(--paper);
+  padding:10px 12px;
+  border-right:1px solid rgba(212,176,90,.35);
+  border-bottom:2px solid var(--gold);
+  text-align:center;
+  white-space:nowrap;
+}
+.input-table th.origin-head{background:var(--navy-light);}
+.input-table th.supply-head,.input-table th.demand-head{background:var(--gold-soft);color:var(--navy);}
+.input-table td{border:1px solid var(--paper-3);padding:8px;text-align:center;background:var(--paper);}
+.input-table td.origin-label,.input-table td.demand-label{
+  background:var(--paper-2);
+  color:var(--navy);
+  font-family:'Cormorant Garamond',serif;
+  font-size:18px;
+  font-weight:700;
+  font-style:italic;
+}
+.cell-input{
+  width:82px;
+  padding:8px 7px;
+  border:1.4px solid var(--navy);
+  background:var(--paper);
+  color:var(--navy);
+  font-family:'JetBrains Mono',monospace;
+  font-weight:700;
+  text-align:center;
+}
+.cell-input:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
+.solve-btn,.example-btn{
+  padding:17px 24px;
+  cursor:pointer;
+  font-family:'Cormorant Garamond',serif;
+  font-size:19px;
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  transition:all .25s ease;
+}
+.solve-btn{background:var(--navy);color:var(--paper);border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);}
+.solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);color:var(--navy);}
+.example-btn{background:transparent;color:var(--navy);border:1px dashed var(--navy);font-family:'JetBrains Mono',monospace;font-size:11px;}
+.example-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+.summary-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:26px;margin-bottom:32px;}
+.verdict{border:2px solid var(--navy);background:var(--navy);color:var(--paper);box-shadow:6px 6px 0 var(--gold);padding:28px 32px;position:relative;}
+.verdict::before{content:"";position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:1px solid rgba(212,176,90,.32);pointer-events:none;}
+.verdict-label{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-light);margin-bottom:8px;font-weight:700;}
+.verdict-value{font-family:'Cormorant Garamond',serif;font-size:clamp(30px,4vw,48px);font-weight:400;line-height:1;color:var(--paper);}
+.verdict-value em{color:var(--gold-light);font-style:italic;font-weight:500;}
+.note-card{background:var(--paper-2);border:1.5px solid var(--navy);border-left:5px solid var(--gold);padding:22px 24px;box-shadow:4px 4px 0 var(--gold-soft);}
+.note-card h4{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--navy);font-weight:500;margin-bottom:10px;border-bottom:1px solid var(--gold);padding-bottom:8px;}
+.note-card p{font-size:14px;line-height:1.7;color:var(--ink);}
+.result-table{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:12.5px;min-width:760px;}
+.result-table th{background:var(--navy);color:var(--paper);padding:10px;border-right:1px solid rgba(212,176,90,.35);border-bottom:2px solid var(--gold);white-space:nowrap;}
+.result-table th.col-supply,.result-table th.col-demand{background:var(--gold-soft);color:var(--navy);}
+.result-table td{padding:10px;border:1px solid var(--paper-3);text-align:center;background:var(--paper);color:var(--ink);font-weight:600;}
+.result-table td.origin-cell,.result-table td.demand-cell{background:var(--paper-2);font-family:'Cormorant Garamond',serif;color:var(--navy);font-size:18px;font-weight:700;font-style:italic;}
+.result-table td.allocated{background:rgba(212,176,90,.23);border:2px solid var(--gold);color:var(--navy);font-weight:900;}
+.result-table td.zero-alloc{color:var(--muted);background:rgba(17,33,63,.035);}
+.cost-small{display:block;color:var(--muted);font-size:10px;font-weight:500;margin-bottom:3px;}
+.alloc-big{display:block;font-size:18px;color:var(--navy);font-weight:900;}
+.iter-block{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 var(--gold-soft);margin-bottom:26px;overflow:hidden;}
+.iter-header{background:var(--navy);color:var(--paper);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);}
+.iter-title{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:23px;font-weight:500;}
+.iter-tag{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;background:var(--gold);color:var(--navy);padding:5px 12px;font-weight:800;text-transform:uppercase;}
+.iter-body{padding:20px 22px;}
+.step-text{background:var(--paper-2);border-left:3px solid var(--gold);padding:14px 18px;margin-bottom:14px;font-size:13px;line-height:1.65;color:var(--ink);}
+.step-text code{font-family:'JetBrains Mono',monospace;background:var(--paper);padding:2px 8px;border:1px solid var(--paper-3);color:var(--navy);font-weight:700;font-size:12px;}
+.graph-wrap{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 rgba(179,138,47,.28);padding:18px;overflow-x:auto;}
+svg.transport-graph{width:100%;min-width:820px;height:470px;background:linear-gradient(180deg,rgba(248,246,241,.9),rgba(239,233,220,.35));}
+.node circle{fill:var(--paper);stroke:var(--navy);stroke-width:2.4;}
+.node.origin circle{fill:rgba(17,33,63,.06);}
+.node.destination circle{fill:rgba(212,176,90,.20);stroke:var(--gold);}
+.node text{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;fill:var(--navy);font-style:italic;text-anchor:middle;dominant-baseline:middle;}
+.arc{stroke:rgba(17,33,63,.23);stroke-width:1.2;fill:none;}
+.arc.used{stroke:var(--gold);stroke-width:3.2;}
+.arc-label{font-family:'JetBrains Mono',monospace;font-size:11px;fill:var(--muted);font-weight:700;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round;}
+.arc-label.used{fill:var(--navy);font-size:12px;}
+.empty-state{text-align:center;padding:85px 20px;color:var(--muted);}
+.empty-state .icon{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:130px;line-height:1;color:var(--gold);opacity:.35;margin-bottom:20px;font-weight:300;}
+.empty-state h3{font-family:'Cormorant Garamond',serif;font-size:29px;font-weight:500;color:var(--navy);margin-bottom:10px;}
+.empty-state p{font-size:14px;line-height:1.7;max-width:520px;margin:0 auto;color:var(--muted);}
+.error-msg{border:2px solid var(--error);background:rgba(138,42,42,.055);padding:18px 22px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;}
+.error-msg strong{display:block;color:var(--error);font-family:'Cormorant Garamond',serif;font-size:18px;margin-bottom:6px;font-weight:700;}
+footer{border-top:3px double var(--navy);padding:20px 48px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;background:var(--paper);position:relative;}
+footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+@media(max-width:1100px){
+  header.masthead{grid-template-columns:1fr;align-items:start;gap:16px;}
+  .meta{text-align:left;}
+  .config-grid{grid-template-columns:1fr 1fr;}
+  .summary-grid{grid-template-columns:1fr;}
+}
+@media(max-width:720px){
+  .config-grid{grid-template-columns:1fr;}
+  .panel-top,.panel-bottom{padding-left:22px;padding-right:22px;}
+}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">IO · MODELO DEL TRANSPORTE</div>
+  <div class="title-block">
+    <h1>Modelo de <em>Transporte</em></h1>
+    <div class="subtitle">Esquina Noroeste · Costo Mínimo · Aproximación de Vogel</div>
+  </div>
+  <div class="meta">
+    <strong>Investigación de Operaciones</strong>
+    Dr. Carlos Miguel López Martínez · Oaxaca<br>
+    Edición Académica · 2026
+  </div>
+</header>
+
+<main>
+  <section class="panel-top">
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Definir el modelo de transporte</h2>
+
+    <div class="config-grid">
+      <div class="config-row">
+        <label>Número de orígenes</label>
+        <input type="number" id="num-origins" min="1" max="8" value="3" />
+      </div>
+      <div class="config-row">
+        <label>Número de destinos</label>
+        <input type="number" id="num-destinations" min="1" max="8" value="4" />
+      </div>
+      <div class="config-row">
+        <label>Solución inicial</label>
+        <select id="method">
+          <option value="nw">Esquina Noroeste</option>
+          <option value="mincost">Costo mínimo</option>
+          <option value="vogel">Aproximación de Vogel</option>
+        </select>
+      </div>
+      <div class="config-row">
+        <label>Balance automático</label>
+        <select id="auto-balance">
+          <option value="yes">Sí</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-label">Matriz de costos, oferta y demanda</div>
+    <div class="model-card">
+      <div class="table-scroll" id="matrix-container"></div>
+      <div class="actions">
+        <button class="solve-btn" id="solve-btn">Resolver transporte</button>
+        <button class="example-btn" id="example-btn">↻ Cargar ejemplo</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-bottom">
+    <div id="results">
+      <div class="empty-state">
+        <div class="icon">⇄</div>
+        <h3>Esperando la matriz de transporte</h3>
+        <p>Capture costos, ofertas y demandas. Después seleccione el método inicial para generar la asignación y el grafo bipartito correspondiente.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Modelo de Transporte · Solución inicial factible · Dr. Calors Miguel López Martínez, Mayo 2026</div>
+  <div>∑ oferta = ∑ demanda</div>
+</footer>
+
+<script>
+const EPS = 1e-9;
+const numOriginsInput = document.getElementById('num-origins');
+const numDestinationsInput = document.getElementById('num-destinations');
+const matrixContainer = document.getElementById('matrix-container');
+
+function clampInput(input,min,max){
+  let v = parseInt(input.value);
+  if(isNaN(v)||v<min) v=min;
+  if(v>max) v=max;
+  input.value = v;
+  return v;
+}
+
+function buildMatrix(){
+  const oldCosts = [...document.querySelectorAll('.cost-input')].map(i=>({r:+i.dataset.r,c:+i.dataset.c,v:i.value}));
+  const oldSupply = [...document.querySelectorAll('.supply-input')].map(i=>({r:+i.dataset.r,v:i.value}));
+  const oldDemand = [...document.querySelectorAll('.demand-input')].map(i=>({c:+i.dataset.c,v:i.value}));
+  const getOldCost=(r,c)=>oldCosts.find(x=>x.r===r&&x.c===c)?.v ?? '';
+  const getOldSupply=(r)=>oldSupply.find(x=>x.r===r)?.v ?? '';
+  const getOldDemand=(c)=>oldDemand.find(x=>x.c===c)?.v ?? '';
+
+  const m = clampInput(numOriginsInput,1,8);
+  const n = clampInput(numDestinationsInput,1,8);
+
+  let html = `<table class="input-table"><thead><tr><th class="origin-head">Origen / Destino</th>`;
+  for(let j=0;j<n;j++) html += `<th>D<sub>${j+1}</sub></th>`;
+  html += `<th class="supply-head">Oferta</th></tr></thead><tbody>`;
+
+  for(let i=0;i<m;i++){
+    html += `<tr><td class="origin-label">O<sub>${i+1}</sub></td>`;
+    for(let j=0;j<n;j++){
+      html += `<td><input class="cell-input cost-input" type="number" step="any" data-r="${i}" data-c="${j}" value="${getOldCost(i,j)}" placeholder="c${i+1}${j+1}" /></td>`;
+    }
+    html += `<td><input class="cell-input supply-input" type="number" step="any" data-r="${i}" value="${getOldSupply(i)}" placeholder="a${i+1}" /></td></tr>`;
+  }
+
+  html += `<tr><td class="demand-label">Demanda</td>`;
+  for(let j=0;j<n;j++){
+    html += `<td><input class="cell-input demand-input" type="number" step="any" data-c="${j}" value="${getOldDemand(j)}" placeholder="b${j+1}" /></td>`;
+  }
+  html += `<td class="demand-label">Balance</td></tr>`;
+  html += `</tbody></table>`;
+  matrixContainer.innerHTML = html;
+}
+
+numOriginsInput.addEventListener('change', buildMatrix);
+numDestinationsInput.addEventListener('change', buildMatrix);
+
+function readModel(){
+  const m = parseInt(numOriginsInput.value);
+  const n = parseInt(numDestinationsInput.value);
+  const method = document.getElementById('method').value;
+  const autoBalance = document.getElementById('auto-balance').value === 'yes';
+  const costs = Array.from({length:m},()=>Array(n).fill(0));
+  const supply = Array(m).fill(0);
+  const demand = Array(n).fill(0);
+
+  document.querySelectorAll('.cost-input').forEach(inp=>{
+    const v = parseFloat(inp.value);
+    if(isNaN(v)) throw new Error(`Falta capturar un costo en O${+inp.dataset.r+1} → D${+inp.dataset.c+1}.`);
+    costs[+inp.dataset.r][+inp.dataset.c] = v;
+  });
+  document.querySelectorAll('.supply-input').forEach(inp=>{
+    const v = parseFloat(inp.value);
+    if(isNaN(v)) throw new Error(`Falta capturar la oferta del origen O${+inp.dataset.r+1}.`);
+    supply[+inp.dataset.r] = v;
+  });
+  document.querySelectorAll('.demand-input').forEach(inp=>{
+    const v = parseFloat(inp.value);
+    if(isNaN(v)) throw new Error(`Falta capturar la demanda del destino D${+inp.dataset.c+1}.`);
+    demand[+inp.dataset.c] = v;
+  });
+  if(supply.some(x=>x<0)||demand.some(x=>x<0)) throw new Error('Oferta y demanda deben ser valores no negativos.');
+  return balanceModel({m,n,costs,supply,demand,method,autoBalance});
+}
+
+function balanceModel(model){
+  let {m,n,costs,supply,demand,autoBalance} = model;
+  costs = costs.map(r=>[...r]);
+  supply = [...supply];
+  demand = [...demand];
+  const totalS = sum(supply), totalD = sum(demand);
+  let balanceNote = 'El modelo está balanceado: la oferta total coincide con la demanda total.';
+  let dummy = null;
+
+  if(Math.abs(totalS-totalD)>EPS){
+    if(!autoBalance) throw new Error(`El modelo no está balanceado. Oferta total = ${fmt(totalS)}, demanda total = ${fmt(totalD)}.`);
+    if(totalS > totalD){
+      const extra = totalS-totalD;
+      n++;
+      for(let i=0;i<m;i++) costs[i].push(0);
+      demand.push(extra);
+      dummy = {type:'destination',amount:extra,label:`D${n}`};
+      balanceNote = `Se agregó un destino ficticio D${n} con demanda ${fmt(extra)} y costo cero, porque la oferta total excede a la demanda.`;
+    } else {
+      const extra = totalD-totalS;
+      m++;
+      costs.push(Array(n).fill(0));
+      supply.push(extra);
+      dummy = {type:'origin',amount:extra,label:`O${m}`};
+      balanceNote = `Se agregó un origen ficticio O${m} con oferta ${fmt(extra)} y costo cero, porque la demanda total excede a la oferta.`;
+    }
+  }
+  return {...model,m,n,costs,supply,demand,balanceNote,dummy,totalS:sum(supply),totalD:sum(demand)};
+}
+
+function solveTransportation(model){
+  if(model.method === 'nw') return northwest(model);
+  if(model.method === 'mincost') return minCost(model);
+  return vogel(model);
+}
+
+function blankAlloc(m,n){return Array.from({length:m},()=>Array(n).fill(0));}
+function activeRows(arr){return arr.map(x=>x>EPS);} 
+function activeCols(arr){return arr.map(x=>x>EPS);} 
+function sum(arr){return arr.reduce((a,b)=>a+b,0);} 
+function fmt(v){
+  if(Math.abs(v)<1e-8) return '0';
+  if(Math.abs(v-Math.round(v))<1e-8) return String(Math.round(v));
+  return Number(v.toFixed(3)).toString();
+}
+function methodName(code){
+  return code==='nw'?'Esquina Noroeste':code==='mincost'?'Costo mínimo':'Aproximación de Vogel';
+}
+
+function northwest(model){
+  const {m,n,costs} = model;
+  const supply = [...model.supply];
+  const demand = [...model.demand];
+  const alloc = blankAlloc(m,n);
+  const steps=[];
+  let i=0,j=0,k=1;
+  while(i<m && j<n){
+    const x = Math.min(supply[i],demand[j]);
+    alloc[i][j] = x;
+    steps.push({k,method:'Esquina Noroeste',cell:[i,j],amount:x,cost:costs[i][j],text:`Se asigna min(oferta O${i+1}=${fmt(supply[i])}, demanda D${j+1}=${fmt(demand[j])}) = ${fmt(x)} en la celda O${i+1}–D${j+1}.`});
+    supply[i]-=x; demand[j]-=x;
+    if(Math.abs(supply[i])<EPS && Math.abs(demand[j])<EPS){ i++; j++; }
+    else if(Math.abs(supply[i])<EPS){ i++; }
+    else if(Math.abs(demand[j])<EPS){ j++; }
+    k++;
+  }
+  return finalize(model,alloc,steps);
+}
+
+function minCost(model){
+  const {m,n,costs} = model;
+  const supply = [...model.supply];
+  const demand = [...model.demand];
+  const alloc = blankAlloc(m,n);
+  const steps=[];
+  let k=1;
+  while(sum(supply)>EPS && sum(demand)>EPS){
+    let best=null;
+    for(let i=0;i<m;i++) if(supply[i]>EPS){
+      for(let j=0;j<n;j++) if(demand[j]>EPS){
+        const candidate = {i,j,c:costs[i][j]};
+        if(!best || candidate.c<best.c-EPS || (Math.abs(candidate.c-best.c)<EPS && Math.min(supply[i],demand[j])>Math.min(supply[best.i],demand[best.j]))) best=candidate;
+      }
+    }
+    const x = Math.min(supply[best.i],demand[best.j]);
+    alloc[best.i][best.j]=x;
+    steps.push({k,method:'Costo mínimo',cell:[best.i,best.j],amount:x,cost:best.c,text:`Se selecciona el menor costo disponible c${best.i+1}${best.j+1}=${fmt(best.c)} y se asigna min(${fmt(supply[best.i])}, ${fmt(demand[best.j])}) = ${fmt(x)}.`});
+    supply[best.i]-=x; demand[best.j]-=x; k++;
+  }
+  return finalize(model,alloc,steps);
+}
+
+function vogel(model){
+  const {m,n,costs} = model;
+  const supply = [...model.supply];
+  const demand = [...model.demand];
+  const alloc = blankAlloc(m,n);
+  const steps=[];
+  let k=1;
+  while(sum(supply)>EPS && sum(demand)>EPS){
+    const rowActive = activeRows(supply);
+    const colActive = activeCols(demand);
+    const rowPen = Array(m).fill(null);
+    const colPen = Array(n).fill(null);
+    for(let i=0;i<m;i++) if(rowActive[i]){
+      const vals=[];
+      for(let j=0;j<n;j++) if(colActive[j]) vals.push(costs[i][j]);
+      rowPen[i]=penalty(vals);
+    }
+    for(let j=0;j<n;j++) if(colActive[j]){
+      const vals=[];
+      for(let i=0;i<m;i++) if(rowActive[i]) vals.push(costs[i][j]);
+      colPen[j]=penalty(vals);
+    }
+    let choice={type:null,index:-1,pen:-Infinity};
+    rowPen.forEach((p,i)=>{ if(p!==null && p>choice.pen+EPS) choice={type:'row',index:i,pen:p}; });
+    colPen.forEach((p,j)=>{ if(p!==null && p>choice.pen+EPS) choice={type:'col',index:j,pen:p}; });
+
+    let best=null;
+    if(choice.type==='row'){
+      const i=choice.index;
+      for(let j=0;j<n;j++) if(colActive[j]){
+        if(!best || costs[i][j]<best.c-EPS || (Math.abs(costs[i][j]-best.c)<EPS && demand[j]>demand[best.j])) best={i,j,c:costs[i][j]};
+      }
+    } else {
+      const j=choice.index;
+      for(let i=0;i<m;i++) if(rowActive[i]){
+        if(!best || costs[i][j]<best.c-EPS || (Math.abs(costs[i][j]-best.c)<EPS && supply[i]>supply[best.i])) best={i,j,c:costs[i][j]};
+      }
+    }
+    const x = Math.min(supply[best.i],demand[best.j]);
+    alloc[best.i][best.j]=x;
+    const place = choice.type==='row'?`renglón O${choice.index+1}`:`columna D${choice.index+1}`;
+    steps.push({k,method:'Vogel',cell:[best.i,best.j],amount:x,cost:best.c,text:`La penalización mayor es ${fmt(choice.pen)} en ${place}. Dentro de esa línea se elige el menor costo disponible c${best.i+1}${best.j+1}=${fmt(best.c)} y se asigna ${fmt(x)}.`});
+    supply[best.i]-=x; demand[best.j]-=x; k++;
+  }
+  return finalize(model,alloc,steps);
+}
+
+function penalty(vals){
+  if(vals.length===0) return null;
+  const sorted=[...vals].sort((a,b)=>a-b);
+  if(sorted.length===1) return sorted[0];
+  return sorted[1]-sorted[0];
+}
+
+function finalize(model,alloc,steps){
+  let total=0;
+  for(let i=0;i<model.m;i++) for(let j=0;j<model.n;j++) total += alloc[i][j]*model.costs[i][j];
+  return {alloc,steps,total};
+}
+
+function renderResults(model,result){
+  const out=document.getElementById('results');
+  const finalAlloc = result.finalAlloc || result.alloc;
+  const finalTotal = result.finalTotal ?? result.total;
+  const initialTotal = result.initialTotal ?? result.total;
+  let html='';
+
+  const optimalLabel = result.optimal ? 'Solución óptima por multiplicadores' : 'Solución inicial factible';
+  html += `<div class="summary-grid">
+    <div class="verdict">
+      <div class="verdict-label">${methodName(model.method)} · ${optimalLabel}</div>
+      <div class="verdict-value">Z* = <em>${fmt(finalTotal)}</em></div>
+    </div>
+    <div class="note-card">
+      <h4>Balance del modelo</h4>
+      <p>${model.balanceNote}</p>
+      <p style="margin-top:8px;"><strong>Oferta total:</strong> ${fmt(model.totalS)} &nbsp; · &nbsp; <strong>Demanda total:</strong> ${fmt(model.totalD)}</p>
+      <p style="margin-top:8px;"><strong>Costo inicial:</strong> ${fmt(initialTotal)} &nbsp; · &nbsp; <strong>Costo final:</strong> ${fmt(finalTotal)}</p>
+    </div>
+  </div>`;
+
+  html += `<div class="section-label" style="color:var(--navy);font-size:11px;margin:30px 0 14px;">Solución inicial obtenida</div>`;
+  html += renderAllocationTable(model,result.alloc);
+
+  html += `<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Iteraciones por método de los multiplicadores</div>`;
+  if(result.modiIterations && result.modiIterations.length){
+    result.modiIterations.forEach(iter=>{ html += renderMODIIteration(model,iter); });
+  } else {
+    html += `<div class="note-card"><h4>Optimalidad inmediata</h4><p>La solución inicial ya satisface la condición de optimalidad: todos los costos de oportunidad son mayores o iguales que cero.</p></div>`;
+  }
+
+  html += `<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Solución final</div>`;
+  html += renderAllocationTable(model,finalAlloc);
+
+  html += `<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Grafo correspondiente a la solución final</div>`;
+  html += `<div class="graph-wrap">${renderGraph(model,finalAlloc)}</div>`;
+
+  out.innerHTML=html;
+  document.querySelector('.panel-bottom').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function optimizeMODI(model,initial){
+  let alloc = initial.alloc.map(r=>[...r]);
+  let basis = makeInitialBasis(model,alloc);
+  const iterations=[];
+  const MAX_ITER=50;
+
+  for(let it=1; it<=MAX_ITER; it++){
+    const beforeAlloc = alloc.map(r=>[...r]);
+    const basisBefore = basis.map(c=>({...c}));
+    const potentials = computePotentials(model,basis);
+    const deltas = computeDeltas(model,potentials,basis);
+    let entering=null;
+    for(let i=0;i<model.m;i++){
+      for(let j=0;j<model.n;j++){
+        if(!isBasic(basis,i,j)){
+          const d=deltas[i][j];
+          if(d < -EPS && (!entering || d < entering.delta - EPS)) entering={i,j,delta:d};
+        }
+      }
+    }
+
+    if(!entering){
+      return {
+        ...initial,
+        initialTotal: initial.total,
+        finalAlloc: alloc,
+        finalTotal: totalCost(model,alloc),
+        modiIterations: iterations,
+        optimal:true
+      };
+    }
+
+    const cycle = findCycle(model,basis,entering);
+    const minusCells = cycle.filter(c=>c.sign==='-');
+    let theta = Infinity;
+    let leaving = null;
+    minusCells.forEach(c=>{
+      const val=alloc[c.i][c.j];
+      if(val < theta - EPS){ theta=val; leaving={i:c.i,j:c.j}; }
+    });
+
+    cycle.forEach(c=>{
+      if(c.sign==='+') alloc[c.i][c.j] += theta;
+      else alloc[c.i][c.j] -= theta;
+      if(Math.abs(alloc[c.i][c.j])<EPS) alloc[c.i][c.j]=0;
+    });
+
+    basis = basis.filter(c=>!(c.i===leaving.i && c.j===leaving.j));
+    basis.push({i:entering.i,j:entering.j});
+    basis = normalizeBasis(model,alloc,basis);
+
+    iterations.push({
+      num:it,
+      beforeAlloc,
+      afterAlloc:alloc.map(r=>[...r]),
+      basisBefore,
+      potentials,
+      deltas,
+      entering,
+      cycle,
+      theta,
+      leaving,
+      beforeTotal:totalCost(model,beforeAlloc),
+      afterTotal:totalCost(model,alloc)
+    });
+  }
+
+  return {
+    ...initial,
+    initialTotal: initial.total,
+    finalAlloc: alloc,
+    finalTotal: totalCost(model,alloc),
+    modiIterations: iterations,
+    optimal:false
+  };
+}
+
+function totalCost(model,alloc){
+  let z=0;
+  for(let i=0;i<model.m;i++) for(let j=0;j<model.n;j++) z += alloc[i][j]*model.costs[i][j];
+  return z;
+}
+
+function makeInitialBasis(model,alloc){
+  const basis=[];
+  for(let i=0;i<model.m;i++) for(let j=0;j<model.n;j++) if(alloc[i][j]>EPS) basis.push({i,j});
+  return normalizeBasis(model,alloc,basis);
+}
+
+function normalizeBasis(model,alloc,basis){
+  const needed = model.m + model.n - 1;
+  let b = uniqueBasis(basis);
+  const uf = new DSU(model.m + model.n);
+  b.forEach(c=>uf.union(c.i, model.m+c.j));
+  const candidates=[];
+  for(let i=0;i<model.m;i++) for(let j=0;j<model.n;j++){
+    if(!isBasic(b,i,j)) candidates.push({i,j,c:model.costs[i][j]});
+  }
+  candidates.sort((a,b)=>a.c-b.c || a.i-b.i || a.j-b.j);
+  for(const cell of candidates){
+    if(b.length>=needed) break;
+    const a=cell.i, d=model.m+cell.j;
+    if(uf.find(a)!==uf.find(d)){
+      b.push({i:cell.i,j:cell.j,degenerate:true});
+      uf.union(a,d);
+    }
+  }
+  return b.slice(0,needed);
+}
+
+function uniqueBasis(basis){
+  const seen=new Set(), out=[];
+  basis.forEach(c=>{
+    const key=`${c.i},${c.j}`;
+    if(!seen.has(key)){ seen.add(key); out.push({...c}); }
+  });
+  return out;
+}
+
+function isBasic(basis,i,j){ return basis.some(c=>c.i===i && c.j===j); }
+
+class DSU{
+  constructor(n){ this.p=Array.from({length:n},(_,i)=>i); }
+  find(x){ while(this.p[x]!==x){ this.p[x]=this.p[this.p[x]]; x=this.p[x]; } return x; }
+  union(a,b){ a=this.find(a); b=this.find(b); if(a!==b) this.p[b]=a; }
+}
+
+function computePotentials(model,basis){
+  const u=Array(model.m).fill(null), v=Array(model.n).fill(null);
+  u[0]=0;
+  let changed=true;
+  while(changed){
+    changed=false;
+    basis.forEach(c=>{
+      if(u[c.i]!==null && v[c.j]===null){ v[c.j]=model.costs[c.i][c.j]-u[c.i]; changed=true; }
+      if(v[c.j]!==null && u[c.i]===null){ u[c.i]=model.costs[c.i][c.j]-v[c.j]; changed=true; }
+    });
+  }
+  for(let i=0;i<model.m;i++) if(u[i]===null) u[i]=0;
+  for(let j=0;j<model.n;j++) if(v[j]===null) v[j]=0;
+  return {u,v};
+}
+
+function computeDeltas(model,potentials,basis){
+  const deltas=Array.from({length:model.m},()=>Array(model.n).fill(null));
+  for(let i=0;i<model.m;i++) for(let j=0;j<model.n;j++){
+    if(!isBasic(basis,i,j)) deltas[i][j]=model.costs[i][j]-potentials.u[i]-potentials.v[j];
+  }
+  return deltas;
+}
+
+function findCycle(model,basis,entering){
+  const start=`R${entering.i}`;
+  const target=`C${entering.j}`;
+  const adj={};
+  function add(a,b,cell){
+    if(!adj[a]) adj[a]=[];
+    if(!adj[b]) adj[b]=[];
+    adj[a].push({to:b,cell});
+    adj[b].push({to:a,cell});
+  }
+  basis.forEach(c=>add(`R${c.i}`,`C${c.j}`,{i:c.i,j:c.j}));
+  const q=[{node:target,path:[]}];
+  const seen=new Set([target]);
+  let found=null;
+  while(q.length && !found){
+    const cur=q.shift();
+    if(cur.node===start){ found=cur.path; break; }
+    (adj[cur.node]||[]).forEach(e=>{
+      if(!seen.has(e.to)){
+        seen.add(e.to);
+        q.push({node:e.to,path:[...cur.path,e.cell]});
+      }
+    });
+  }
+  if(!found) return [{i:entering.i,j:entering.j,sign:'+'}];
+  const cycle=[{i:entering.i,j:entering.j,sign:'+'}];
+  found.forEach((cell,idx)=>cycle.push({i:cell.i,j:cell.j,sign:idx%2===0?'-':'+'}));
+  return cycle;
+}
+
+function renderMODIIteration(model,iter){
+  const entering = `O${iter.entering.i+1}–D${iter.entering.j+1}`;
+  const leaving = `O${iter.leaving.i+1}–D${iter.leaving.j+1}`;
+  let html = `<div class="iter-block">
+    <div class="iter-header"><div class="iter-title">Iteración MODI <em>${iter.num}</em></div><div class="iter-tag">Entra ${entering}</div></div>
+    <div class="iter-body">
+      <div class="step-text">
+        <strong>1) Multiplicadores:</strong> se calculan valores <code>uᵢ</code> y <code>vⱼ</code> usando las celdas básicas, cumpliendo <code>uᵢ + vⱼ = cᵢⱼ</code>.<br>
+        ${renderPotentials(iter.potentials)}
+      </div>
+      ${renderMODITable(model,iter.beforeAlloc,iter.basisBefore,iter.deltas,iter.entering)}
+      <div class="step-text">
+        <strong>2) Prueba de optimalidad:</strong> la celda no básica con costo de oportunidad más negativo es <code>${entering}</code>, con <code>Δ = ${fmt(iter.entering.delta)}</code>. Por lo tanto, entra a la base.<br>
+        <strong>3) Ciclo de ajuste:</strong> ${renderCycleText(iter.cycle)}<br>
+        <strong>4) Valor de ajuste:</strong> θ = mínimo de las posiciones negativas = <code>${fmt(iter.theta)}</code>. Sale <code>${leaving}</code>.<br>
+        <strong>5) Cambio en el costo:</strong> de <code>${fmt(iter.beforeTotal)}</code> a <code>${fmt(iter.afterTotal)}</code>.
+      </div>
+      ${renderAllocationTable(model,iter.afterAlloc)}
+    </div>
+  </div>`;
+  return html;
+}
+
+function renderPotentials(p){
+  const u = p.u.map((x,i)=>`u${i+1}=${fmt(x)}`).join(' · ');
+  const v = p.v.map((x,j)=>`v${j+1}=${fmt(x)}`).join(' · ');
+  return `<code>${u}</code><br><code>${v}</code>`;
+}
+
+function renderCycleText(cycle){
+  return cycle.map(c=>`<code>${c.sign} O${c.i+1}D${c.j+1}</code>`).join(' → ');
+}
+
+function renderMODITable(model,alloc,basis,deltas,entering){
+  let html=`<div class="table-scroll"><table class="result-table"><thead><tr><th>Origen / Destino</th>`;
+  for(let j=0;j<model.n;j++) html += `<th>D<sub>${j+1}</sub></th>`;
+  html += `<th class="col-supply">Oferta</th></tr></thead><tbody>`;
+  for(let i=0;i<model.m;i++){
+    html += `<tr><td class="origin-cell">O<sub>${i+1}</sub></td>`;
+    for(let j=0;j<model.n;j++){
+      const basic=isBasic(basis,i,j);
+      const ent=entering && entering.i===i && entering.j===j;
+      const cls=ent?'allocated':(basic?'allocated':'zero-alloc');
+      const asign = basic ? fmt(alloc[i][j]) : '—';
+      const delta = basic ? 'básica' : `Δ=${fmt(deltas[i][j])}`;
+      html += `<td class="${cls}"><span class="cost-small">c=${fmt(model.costs[i][j])} · ${delta}</span><span class="alloc-big">${asign}</span></td>`;
+    }
+    html += `<td class="origin-cell">${fmt(model.supply[i])}</td></tr>`;
+  }
+  html += `<tr><td class="demand-cell">Demanda</td>`;
+  for(let j=0;j<model.n;j++) html += `<td class="demand-cell">${fmt(model.demand[j])}</td>`;
+  html += `<td class="demand-cell">${fmt(sum(model.demand))}</td></tr></tbody></table></div>`;
+  return html;
+}
+
+function renderAllocationTable(model,alloc,highlight=null){
+  let html=`<div class="table-scroll"><table class="result-table"><thead><tr><th>Origen / Destino</th>`;
+  for(let j=0;j<model.n;j++) html += `<th>D<sub>${j+1}</sub></th>`;
+  html += `<th class="col-supply">Oferta</th></tr></thead><tbody>`;
+  for(let i=0;i<model.m;i++){
+    html += `<tr><td class="origin-cell">O<sub>${i+1}</sub></td>`;
+    for(let j=0;j<model.n;j++){
+      const used = alloc[i][j] > EPS;
+      const hl = highlight && highlight[0]===i && highlight[1]===j;
+      const cls = used || hl ? 'allocated' : 'zero-alloc';
+      html += `<td class="${cls}"><span class="cost-small">c=${fmt(model.costs[i][j])}</span><span class="alloc-big">${used?fmt(alloc[i][j]):'—'}</span></td>`;
+    }
+    html += `<td class="origin-cell">${fmt(model.supply[i])}</td></tr>`;
+  }
+  html += `<tr><td class="demand-cell">Demanda</td>`;
+  for(let j=0;j<model.n;j++) html += `<td class="demand-cell">${fmt(model.demand[j])}</td>`;
+  html += `<td class="demand-cell">${fmt(sum(model.demand))}</td></tr></tbody></table></div>`;
+  return html;
+}
+
+function renderGraph(model,alloc){
+  const W=980,H=470,leftX=150,rightX=830;
+  const top=70,bottom=390;
+  const originY = positions(model.m,top,bottom);
+  const destY = positions(model.n,top,bottom);
+  let svg=`<svg class="transport-graph" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  svg += `<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b38a2f" /></marker></defs>`;
+  svg += `<text x="${leftX}" y="35" style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;fill:#11213f;font-weight:700;text-anchor:middle;">ORÍGENES</text>`;
+  svg += `<text x="${rightX}" y="35" style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.18em;fill:#11213f;font-weight:700;text-anchor:middle;">DESTINOS</text>`;
+
+  for(let i=0;i<model.m;i++){
+    for(let j=0;j<model.n;j++){
+      const used=alloc[i][j]>EPS;
+      const y1=originY[i], y2=destY[j];
+      const mx=(leftX+rightX)/2, my=(y1+y2)/2;
+      svg += `<path class="arc ${used?'used':''}" d="M ${leftX+38} ${y1} C ${mx-130} ${y1}, ${mx+130} ${y2}, ${rightX-38} ${y2}" ${used?'marker-end="url(#arrow)"':''}/>`;
+      const label = used ? `x=${fmt(alloc[i][j])} | c=${fmt(model.costs[i][j])}` : `c=${fmt(model.costs[i][j])}`;
+      svg += `<text class="arc-label ${used?'used':''}" x="${mx}" y="${my-4}">${label}</text>`;
+    }
+  }
+
+  for(let i=0;i<model.m;i++){
+    const y=originY[i];
+    svg += `<g class="node origin"><circle cx="${leftX}" cy="${y}" r="34"/><text x="${leftX}" y="${y}">O${i+1}</text><text x="${leftX}" y="${y+52}" style="font-family:'JetBrains Mono',monospace;font-size:11px;fill:#5b6478;font-style:normal;font-weight:700;text-anchor:middle;">oferta ${fmt(model.supply[i])}</text></g>`;
+  }
+  for(let j=0;j<model.n;j++){
+    const y=destY[j];
+    svg += `<g class="node destination"><circle cx="${rightX}" cy="${y}" r="34"/><text x="${rightX}" y="${y}">D${j+1}</text><text x="${rightX}" y="${y+52}" style="font-family:'JetBrains Mono',monospace;font-size:11px;fill:#5b6478;font-style:normal;font-weight:700;text-anchor:middle;">demanda ${fmt(model.demand[j])}</text></g>`;
+  }
+  svg += `</svg>`;
+  return svg;
+}
+
+function positions(count,top,bottom){
+  if(count===1) return [(top+bottom)/2];
+  const arr=[];
+  const step=(bottom-top)/(count-1);
+  for(let i=0;i<count;i++) arr.push(top+i*step);
+  return arr;
+}
+
+document.getElementById('solve-btn').addEventListener('click',()=>{
+  try{
+    const model=readModel();
+    const initial=solveTransportation(model);
+    const result=optimizeMODI(model,initial);
+    renderResults(model,result);
+  } catch(err){
+    document.getElementById('results').innerHTML = `<div class="error-msg"><strong>Datos incompletos o inconsistentes</strong>${err.message}</div>`;
+  }
+});
+
+document.getElementById('example-btn').addEventListener('click',()=>{
+  numOriginsInput.value=3; numDestinationsInput.value=4;
+  document.getElementById('method').value='vogel';
+  document.getElementById('auto-balance').value='yes';
+  buildMatrix();
+  const costs=[[19,30,50,10],[70,30,40,60],[40,8,70,20]];
+  const supply=[7,9,18];
+  const demand=[5,8,7,14];
+  costs.forEach((row,i)=>row.forEach((v,j)=>document.querySelector(`.cost-input[data-r="${i}"][data-c="${j}"]`).value=v));
+  supply.forEach((v,i)=>document.querySelector(`.supply-input[data-r="${i}"]`).value=v);
+  demand.forEach((v,j)=>document.querySelector(`.demand-input[data-c="${j}"]`).value=v);
+  document.getElementById('solve-btn').click();
+});
+
+buildMatrix();
+document.getElementById('example-btn').click();
+</script>
+</body>
+</html>

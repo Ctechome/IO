@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Modelo de Transbordo — Investigación de Operaciones</title>
+<style>
+/* ============================================================
+   FUENTES LOCALES OPCIONALES
+   Si desea trabajar sin Internet, descargue las fuentes y active
+   estas rutas. Si no existen, el navegador usará los fallbacks.
+============================================================ */
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Italic.woff2') format('woff2');font-weight:500;font-style:italic;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+
+:root{
+  --paper:#f8f6f1;
+  --paper-2:#efe9dc;
+  --paper-3:#d9d0bd;
+  --ink:#0a1628;
+  --navy:#11213f;
+  --navy-light:#2d4272;
+  --gold:#b38a2f;
+  --gold-light:#d4b05a;
+  --gold-soft:#e7d7aa;
+  --muted:#5b6478;
+  --error:#8a2a2a;
+  --success:#2a5a3a;
+  --accent:#7c5c2e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{
+  min-height:100vh;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(17,33,63,.045), transparent 48%),
+    radial-gradient(circle at 85% 90%, rgba(179,138,47,.055), transparent 50%);
+}
+header.masthead{
+  border-bottom:3px double var(--navy);
+  padding:30px 48px 24px;
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:36px;
+  align-items:end;
+  background:var(--paper);
+  position:relative;
+}
+header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+.brand{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;
+  border:1.5px solid var(--navy);padding:9px 16px;background:var(--navy);color:var(--paper);
+}
+.title-block h1{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:clamp(36px,5vw,62px);font-weight:400;line-height:.95;letter-spacing:-.015em;color:var(--navy);
+}
+.title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+.subtitle{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;letter-spacing:.18em;color:var(--muted);margin-top:10px;text-transform:uppercase;}
+.meta{text-align:right;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
+.meta strong{display:block;color:var(--navy);font-size:11px;font-weight:700;}
+main{display:flex;flex-direction:column;min-height:calc(100vh - 130px);}
+.panel-top{border-bottom:3px double var(--navy);padding:32px 42px 34px;background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);overflow-x:auto;position:relative;}
+.panel-top::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--gold);}
+.panel-bottom{padding:36px 44px 60px;background:var(--paper);}
+.section-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:10px;font-weight:700;}
+.section-label::before{content:"§";font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);font-style:italic;}
+.section-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:500;color:var(--navy);margin-bottom:22px;line-height:1.1;}
+.config-grid{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px;margin-bottom:26px;}
+.config-row{display:flex;align-items:center;gap:14px;padding:16px 18px;background:rgba(248,246,241,.82);border:1px solid var(--paper-3);border-left:3px solid var(--navy);}
+.config-row label{font-size:14px;flex:1;color:var(--navy);font-weight:600;}
+.config-row input,.config-row select{font-family:'JetBrains Mono','Consolas',monospace;font-size:13px;padding:8px 12px;border:1.5px solid var(--navy);background:var(--paper);color:var(--navy);min-width:92px;text-align:center;font-weight:700;}
+.config-row input:focus,.config-row select:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.model-card{border:1.5px solid var(--navy);background:var(--paper);padding:22px;box-shadow:4px 4px 0 rgba(179,138,47,.35);margin-top:10px;}
+.table-scroll{overflow-x:auto;padding-bottom:8px;}
+.input-table,.result-table{border-collapse:collapse;min-width:920px;width:100%;font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;}
+.input-table th,.result-table th{background:var(--navy);color:var(--paper);padding:10px 12px;border-right:1px solid rgba(212,176,90,.35);border-bottom:2px solid var(--gold);text-align:center;white-space:nowrap;}
+.input-table th.soft,.result-table th.soft{background:var(--gold-soft);color:var(--navy);}
+.input-table td,.result-table td{border:1px solid var(--paper-3);padding:8px;text-align:center;background:var(--paper);color:var(--ink);font-weight:600;}
+.input-table td.label,.result-table td.label{background:var(--paper-2);color:var(--navy);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:700;font-style:italic;}
+.cell-input{width:92px;padding:8px 7px;border:1.4px solid var(--navy);background:var(--paper);color:var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-weight:700;text-align:center;}
+.cell-input:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.node-name{width:76px;}
+.actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
+.solve-btn,.example-btn{padding:17px 24px;cursor:pointer;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .25s ease;}
+.solve-btn{background:var(--navy);color:var(--paper);border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);}
+.solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);color:var(--navy);}
+.example-btn{background:transparent;color:var(--navy);border:1px dashed var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;}
+.example-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+.summary-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:26px;margin-bottom:32px;}
+.verdict{border:2px solid var(--navy);background:var(--navy);color:var(--paper);box-shadow:6px 6px 0 var(--gold);padding:28px 32px;position:relative;}
+.verdict::before{content:"";position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:1px solid rgba(212,176,90,.32);pointer-events:none;}
+.verdict-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-light);margin-bottom:8px;font-weight:700;}
+.verdict-value{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(30px,4vw,48px);font-weight:400;line-height:1;color:var(--paper);}
+.verdict-value em{color:var(--gold-light);font-style:italic;font-weight:500;}
+.note-card{background:var(--paper-2);border:1.5px solid var(--navy);border-left:5px solid var(--gold);padding:22px 24px;box-shadow:4px 4px 0 var(--gold-soft);}
+.note-card h4{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:var(--navy);font-weight:500;margin-bottom:10px;border-bottom:1px solid var(--gold);padding-bottom:8px;}
+.note-card p{font-size:14px;line-height:1.7;color:var(--ink);}
+.result-table td.used{background:rgba(212,176,90,.23);border:2px solid var(--gold);color:var(--navy);font-weight:900;}
+.result-table td.blocked{background:rgba(17,33,63,.055);color:var(--muted);}
+.cost-small{display:block;color:var(--muted);font-size:10px;font-weight:500;margin-bottom:3px;}
+.alloc-big{display:block;font-size:18px;color:var(--navy);font-weight:900;}
+.graph-wrap{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 rgba(179,138,47,.28);padding:18px;overflow-x:auto;margin-bottom:30px;}
+.iter-block{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 var(--gold-soft);margin-bottom:26px;overflow:hidden;}
+.iter-header{background:var(--navy);color:var(--paper);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);}
+.iter-title{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:23px;font-weight:500;}
+.iter-title em{color:var(--gold-light);font-style:italic;}
+.iter-tag{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;background:var(--gold);color:var(--navy);padding:5px 12px;font-weight:800;text-transform:uppercase;}
+.iter-tag.optimal{background:var(--success);color:var(--paper);}
+.iter-body{padding:20px 22px;}
+.step-text{background:var(--paper-2);border-left:3px solid var(--gold);padding:14px 18px;margin-bottom:14px;font-size:13px;line-height:1.65;color:var(--ink);}
+.step-text code{font-family:'JetBrains Mono','Consolas',monospace;background:var(--paper);padding:2px 8px;border:1px solid var(--paper-3);color:var(--navy);font-weight:700;font-size:12px;}
+.delta-negative{color:var(--error);font-weight:900;}
+.delta-positive{color:var(--success);font-weight:900;}
+.cycle-plus{color:var(--success);font-weight:900;}
+.cycle-minus{color:var(--error);font-weight:900;}
+svg.network-graph{width:100%;min-width:940px;height:520px;background:linear-gradient(180deg,rgba(248,246,241,.9),rgba(239,233,220,.35));}
+.node circle{fill:var(--paper);stroke:var(--navy);stroke-width:2.4;}
+.node.supply circle{fill:rgba(17,33,63,.07);}
+.node.trans circle{fill:rgba(212,176,90,.17);stroke:var(--gold);}
+.node.demand circle{fill:rgba(42,90,58,.09);stroke:var(--success);}
+.node text{font-family:'Cormorant Garamond',Georgia,serif;font-size:21px;font-weight:700;fill:var(--navy);font-style:italic;text-anchor:middle;dominant-baseline:middle;}
+.node .sub{font-family:'JetBrains Mono','Consolas',monospace;font-size:10.5px;fill:var(--muted);font-style:normal;font-weight:700;text-anchor:middle;dominant-baseline:auto;}
+.arc{stroke:rgba(17,33,63,.22);stroke-width:1.2;fill:none;}
+.arc.used{stroke:var(--gold);stroke-width:3.25;}
+.arc-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;fill:var(--muted);font-weight:700;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round;}
+.arc-label.used{fill:var(--navy);font-size:12px;}
+.empty-state{text-align:center;padding:85px 20px;color:var(--muted);}
+.empty-state .icon{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:130px;line-height:1;color:var(--gold);opacity:.35;margin-bottom:20px;font-weight:300;}
+.empty-state h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:29px;font-weight:500;color:var(--navy);margin-bottom:10px;}
+.empty-state p{font-size:14px;line-height:1.7;max-width:560px;margin:0 auto;color:var(--muted);}
+.error-msg{border:2px solid var(--error);background:rgba(138,42,42,.055);padding:18px 22px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;}
+.error-msg strong{display:block;color:var(--error);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;margin-bottom:6px;font-weight:700;}
+footer{border-top:3px double var(--navy);padding:20px 48px;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;background:var(--paper);position:relative;}
+footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+@media(max-width:1100px){header.masthead{grid-template-columns:1fr;align-items:start;gap:16px}.meta{text-align:left}.config-grid,.summary-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.config-grid,.summary-grid{grid-template-columns:1fr}.panel-top,.panel-bottom{padding-left:22px;padding-right:22px}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">IO · TRANSBORDO</div>
+  <div class="title-block">
+    <h1>Modelo de <em>Transbordo</em></h1>
+    <div class="subtitle">Todo nodo puede enviar o recibir  · Optimización MODI</div>
+  </div>
+  <div class="meta">
+    <strong>Investigación de Operaciones</strong>
+    Dr. Carlos Miguel López Martínez · Oaxaca<br>
+    Edición Académica · 2026
+  </div>
+</header>
+
+<main>
+  <section class="panel-top">
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Construir la red de transbordo</h2>
+
+    <div class="config-grid">
+      <div class="config-row"><label>Orígenes</label><input type="number" id="num-supply" min="1" max="6" value="2"></div>
+      <div class="config-row"><label>Transbordos</label><input type="number" id="num-trans" min="0" max="6" value="2"></div>
+      <div class="config-row"><label>Destinos</label><input type="number" id="num-demand" min="1" max="6" value="3"></div>
+      <div class="config-row"><label>Solución inicial</label><select id="method"><option value="vogel">Vogel</option><option value="mincost">Costo mínimo</option><option value="nw">Esquina Noroeste</option></select></div>
+    </div>
+
+    <div class="section-label">Nodos</div>
+    <div class="model-card"><div class="table-scroll" id="nodes-container"></div></div>
+
+    <div class="section-label" style="margin-top:26px;">Arcos permitidos y costos</div>
+    <div class="model-card">
+      <div class="table-scroll" id="arcs-container"></div>
+      <div class="actions">
+        <button class="solve-btn" id="solve-btn">Resolver transbordo</button>
+        <button class="example-btn" id="example-btn">↻ Cargar ejemplo</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-bottom">
+    <div id="results">
+      <div class="empty-state">
+        <div class="icon">⇄</div>
+        <h3>Esperando la red de transbordo</h3>
+        <p>Capture nodos, oferta/demanda y arcos permitidos. Cualquier nodo puede enviar o recibir flujo; su tipo solo representa su balance neto. La página dibuja el grafo, transforma el problema a transporte equivalente y obtiene la solución óptima.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div>Modelo de Transbordo · Dr. Carlos Miguel López Martínez</div>
+  <div>Oferta total = Demanda total</div>
+</footer>
+
+<script>
+const EPS = 1e-9;
+const BIG = 1e9;
+const supplyInput=document.getElementById('num-supply');
+const transInput=document.getElementById('num-trans');
+const demandInput=document.getElementById('num-demand');
+const nodesContainer=document.getElementById('nodes-container');
+const arcsContainer=document.getElementById('arcs-container');
+
+function clamp(input,min,max){let v=parseInt(input.value);if(isNaN(v)||v<min)v=min;if(v>max)v=max;input.value=v;return v;}
+function fmt(v){if(Math.abs(v)<1e-8)return '0';if(Math.abs(v-Math.round(v))<1e-8)return String(Math.round(v));return Number(v.toFixed(3)).toString();}
+function sum(a){return a.reduce((x,y)=>x+y,0);}
+function methodName(code){return code==='nw'?'Esquina Noroeste':code==='mincost'?'Costo mínimo':'Aproximación de Vogel';}
+
+function buildInterface(){
+  const oldNames=[...document.querySelectorAll('.node-name')].map(x=>({id:x.dataset.id,v:x.value}));
+  const oldVals=[...document.querySelectorAll('.node-value')].map(x=>({id:x.dataset.id,v:x.value}));
+  const oldArc=[...document.querySelectorAll('.arc-cost')].map(x=>({from:x.dataset.from,to:x.dataset.to,v:x.value,checked:x.closest('td').querySelector('.arc-check')?.checked}));
+  const getName=id=>oldNames.find(x=>x.id===id)?.v;
+  const getVal=id=>oldVals.find(x=>x.id===id)?.v;
+  const getArc=(f,t)=>oldArc.find(x=>x.from===f&&x.to===t);
+
+  const s=clamp(supplyInput,1,6), t=clamp(transInput,0,6), d=clamp(demandInput,1,6);
+  const nodes=[];
+  for(let i=0;i<s;i++)nodes.push({id:`S${i+1}`,type:'supply',label:getName(`S${i+1}`)||`O${i+1}`,value:getVal(`S${i+1}`)||''});
+  for(let i=0;i<t;i++)nodes.push({id:`T${i+1}`,type:'trans',label:getName(`T${i+1}`)||`T${i+1}`,value:getVal(`T${i+1}`)||'0'});
+  for(let i=0;i<d;i++)nodes.push({id:`D${i+1}`,type:'demand',label:getName(`D${i+1}`)||`D${i+1}`,value:getVal(`D${i+1}`)||''});
+
+  let html=`<table class="input-table"><thead><tr><th>Tipo</th><th>Nombre</th><th class="soft">Oferta / Demanda</th><th>Interpretación</th></tr></thead><tbody>`;
+  nodes.forEach(n=>{
+    const type=n.type==='supply'?'Nodo con oferta neta':n.type==='trans'?'Nodo balanceado':'Nodo con demanda neta';
+    const hint=n.type==='supply'?'Puede enviar y también recibir flujo':n.type==='demand'?'Puede recibir y también reenviar flujo':'Puede enviar y recibir flujo';
+    html+=`<tr><td class="label">${type}</td><td><input class="cell-input node-name" data-id="${n.id}" value="${n.label}"></td><td><input class="cell-input node-value" type="number" step="any" data-id="${n.id}" value="${n.value}"></td><td>${hint}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+  nodesContainer.innerHTML=html;
+
+  /*
+     En el modelo de transbordo general, cualquier nodo puede enviar
+     y cualquier nodo puede recibir. La clasificación Origen/Transbordo/Destino
+     solamente indica su balance neto: oferta positiva, balance cero o demanda.
+     Por eso la matriz de arcos se construye con todos los nodos contra todos.
+  */
+  const fromNodes=nodes;
+  const toNodes=nodes;
+  let ahtml=`<table class="input-table"><thead><tr><th>Desde / Hacia</th>`;
+  toNodes.forEach(n=>ahtml+=`<th>${n.label}</th>`);
+  ahtml+=`</tr></thead><tbody>`;
+  fromNodes.forEach(f=>{
+    ahtml+=`<tr><td class="label">${f.label}</td>`;
+    toNodes.forEach(to=>{
+      if(f.id===to.id){ahtml+=`<td class="blocked">—</td>`;return;}
+      const old=getArc(f.id,to.id);
+      const checked=old ? old.checked : defaultArc(f,to);
+      const val=old?.v ?? '';
+      ahtml+=`<td><label style="display:block;font-size:10px;color:var(--muted);font-weight:700;"><input type="checkbox" class="arc-check" data-from="${f.id}" data-to="${to.id}" ${checked?'checked':''}> arco</label><input class="cell-input arc-cost" type="number" step="any" data-from="${f.id}" data-to="${to.id}" value="${val}" placeholder="c"></td>`;
+    });
+    ahtml+=`</tr>`;
+  });
+  ahtml+=`</tbody></table>`;
+  arcsContainer.innerHTML=ahtml;
+}
+
+function defaultArc(f,to){
+  /*
+     Se activan por defecto los arcos clásicos para facilitar la captura,
+     pero el usuario puede habilitar cualquier dirección:
+     destino → origen, destino → transbordo, transbordo → origen, etc.
+  */
+  if(f.id===to.id)return false;
+  if(f.type==='supply' && to.type==='trans')return true;
+  if(f.type==='trans' && to.type==='demand')return true;
+  if(f.type==='supply' && to.type==='demand')return true;
+  return false;
+}
+
+[supplyInput,transInput,demandInput].forEach(x=>x.addEventListener('change',buildInterface));
+
+function readNetwork(){
+  const nodes=[];
+  document.querySelectorAll('.node-name').forEach(inp=>{
+    const id=inp.dataset.id;
+    const valueInput=document.querySelector(`.node-value[data-id="${id}"]`);
+    const val=parseFloat(valueInput.value);
+    if(isNaN(val))throw new Error(`Falta capturar oferta/demanda del nodo ${inp.value}.`);
+    const type=id[0]==='S'?'supply':id[0]==='T'?'trans':'demand';
+    nodes.push({id,type,label:inp.value.trim()||id,value:val});
+  });
+  const arcs=[];
+  document.querySelectorAll('.arc-check').forEach(chk=>{
+    if(!chk.checked)return;
+    const from=chk.dataset.from,to=chk.dataset.to;
+    const costInput=document.querySelector(`.arc-cost[data-from="${from}"][data-to="${to}"]`);
+    const cost=parseFloat(costInput.value);
+    if(isNaN(cost))throw new Error(`Falta capturar el costo del arco ${labelOf(nodes,from)} → ${labelOf(nodes,to)}.`);
+    arcs.push({from,to,cost});
+  });
+  if(arcs.length===0)throw new Error('Debe existir al menos un arco permitido.');
+  const totalSupply=sum(nodes.filter(n=>n.type==='supply').map(n=>n.value));
+  const totalDemand=sum(nodes.filter(n=>n.type==='demand').map(n=>n.value));
+  if(Math.abs(totalSupply-totalDemand)>EPS)throw new Error(`La red no está balanceada. Oferta total = ${fmt(totalSupply)}, demanda total = ${fmt(totalDemand)}.`);
+  return {nodes,arcs,totalSupply,totalDemand,method:document.getElementById('method').value};
+}
+function labelOf(nodes,id){return nodes.find(n=>n.id===id)?.label||id;}
+
+function floydWarshall(network){
+  const n=network.nodes.length;
+  const idx=Object.fromEntries(network.nodes.map((node,i)=>[node.id,i]));
+  const dist=Array.from({length:n},()=>Array(n).fill(BIG));
+  const next=Array.from({length:n},()=>Array(n).fill(null));
+  for(let i=0;i<n;i++){dist[i][i]=0;next[i][i]=i;}
+  network.arcs.forEach(a=>{const i=idx[a.from],j=idx[a.to]; if(a.cost<dist[i][j]){dist[i][j]=a.cost;next[i][j]=j;}});
+  for(let k=0;k<n;k++)for(let i=0;i<n;i++)for(let j=0;j<n;j++){
+    if(dist[i][k]+dist[k][j] < dist[i][j]-EPS){dist[i][j]=dist[i][k]+dist[k][j];next[i][j]=next[i][k];}
+  }
+  return {dist,next,idx};
+}
+function pathBetween(network,fw,from,to){
+  const i=fw.idx[from],j=fw.idx[to];
+  if(fw.next[i][j]===null)return [];
+  const path=[from];let u=i;
+  while(u!==j){u=fw.next[u][j];path.push(network.nodes[u].id);if(path.length>network.nodes.length+2)break;}
+  return path;
+}
+
+function buildEquivalentTransportation(network){
+  /*
+    Transformación NxN para transbordo general.
+    Cada nodo aparece como renglón y como columna.
+
+    Balance neto bᵢ:
+      bᵢ > 0  => nodo con oferta neta
+      bᵢ = 0  => nodo de transbordo puro
+      bᵢ < 0  => nodo con demanda neta
+
+    Se usa una constante K = oferta total para construir:
+      oferta fila i  = K + max(bᵢ, 0)
+      demanda col i  = K + max(-bᵢ, 0)
+
+    Así se conserva: oferta_i - demanda_i = bᵢ.
+    La diagonal i→i tiene costo 0 y representa flujo artificial de balance.
+    Los arcos no permitidos reciben costo BIG y quedan penalizados.
+  */
+  const nodes=network.nodes;
+  const n=nodes.length;
+  const K=network.totalSupply;
+  const costs=Array.from({length:n},()=>Array(n).fill(BIG));
+  const allowed=Array.from({length:n},()=>Array(n).fill(false));
+  const idx=Object.fromEntries(nodes.map((node,i)=>[node.id,i]));
+
+  for(let i=0;i<n;i++){
+    costs[i][i]=0;
+    allowed[i][i]=true;
+  }
+
+  network.arcs.forEach(a=>{
+    const i=idx[a.from],j=idx[a.to];
+    costs[i][j]=a.cost;
+    allowed[i][j]=true;
+  });
+
+  const balance=nodes.map(node=>{
+    if(node.type==='supply')return node.value;
+    if(node.type==='demand')return -node.value;
+    return 0;
+  });
+
+  const supply=balance.map(b=>K+Math.max(b,0));
+  const demand=balance.map(b=>K+Math.max(-b,0));
+
+  return {
+    m:n,
+    n:n,
+    costs,
+    allowed,
+    supply,
+    demand,
+    balance,
+    K,
+    method:network.method,
+    origins:nodes,
+    destinations:nodes,
+    nodes,
+    network
+  };
+}
+
+function solveInitial(model){if(model.method==='nw')return northwest(model);if(model.method==='mincost')return minCost(model);return vogel(model);}
+function blankAlloc(m,n){return Array.from({length:m},()=>Array(n).fill(0));}
+function activeRows(arr){return arr.map(x=>x>EPS);}function activeCols(arr){return arr.map(x=>x>EPS);}
+function northwest(model){const supply=[...model.supply],demand=[...model.demand],alloc=blankAlloc(model.m,model.n);let i=0,j=0;while(i<model.m&&j<model.n){const x=Math.min(supply[i],demand[j]);alloc[i][j]=x;supply[i]-=x;demand[j]-=x;if(Math.abs(supply[i])<EPS&&Math.abs(demand[j])<EPS){i++;j++;}else if(Math.abs(supply[i])<EPS)i++;else if(Math.abs(demand[j])<EPS)j++;}return {alloc,total:totalCost(model,alloc)};}
+function minCost(model){const supply=[...model.supply],demand=[...model.demand],alloc=blankAlloc(model.m,model.n);while(sum(supply)>EPS&&sum(demand)>EPS){let best=null;for(let i=0;i<model.m;i++)if(supply[i]>EPS)for(let j=0;j<model.n;j++)if(demand[j]>EPS){if(model.costs[i][j]<BIG/2 && (!best||model.costs[i][j]<best.c-EPS))best={i,j,c:model.costs[i][j]};}const x=Math.min(supply[best.i],demand[best.j]);alloc[best.i][best.j]=x;supply[best.i]-=x;demand[best.j]-=x;}return {alloc,total:totalCost(model,alloc)};}
+function vogel(model){const supply=[...model.supply],demand=[...model.demand],alloc=blankAlloc(model.m,model.n);while(sum(supply)>EPS&&sum(demand)>EPS){const rA=activeRows(supply),cA=activeCols(demand);let choice={type:null,index:-1,pen:-Infinity};for(let i=0;i<model.m;i++)if(rA[i]){const vals=[];for(let j=0;j<model.n;j++)if(cA[j])vals.push(model.costs[i][j]);const p=penalty(vals);if(p>choice.pen+EPS)choice={type:'row',index:i,pen:p};}for(let j=0;j<model.n;j++)if(cA[j]){const vals=[];for(let i=0;i<model.m;i++)if(rA[i])vals.push(model.costs[i][j]);const p=penalty(vals);if(p>choice.pen+EPS)choice={type:'col',index:j,pen:p};}let best=null;if(choice.type==='row'){const i=choice.index;for(let j=0;j<model.n;j++)if(cA[j])if(model.costs[i][j]<BIG/2 && (!best||model.costs[i][j]<best.c-EPS))best={i,j,c:model.costs[i][j]};}else{const j=choice.index;for(let i=0;i<model.m;i++)if(rA[i])if(model.costs[i][j]<BIG/2 && (!best||model.costs[i][j]<best.c-EPS))best={i,j,c:model.costs[i][j]};}const x=Math.min(supply[best.i],demand[best.j]);alloc[best.i][best.j]=x;supply[best.i]-=x;demand[best.j]-=x;}return {alloc,total:totalCost(model,alloc)};}
+function penalty(vals){const s=[...vals].sort((a,b)=>a-b);return s.length<2?s[0]:s[1]-s[0];}
+function totalCost(model,alloc){
+  let z=0;
+  for(let i=0;i<model.m;i++)for(let j=0;j<model.n;j++){
+    if(i===j)continue;
+    if(model.costs[i][j]>=BIG/2 && alloc[i][j]>EPS) z += alloc[i][j]*model.costs[i][j];
+    else if(model.costs[i][j]<BIG/2) z += alloc[i][j]*model.costs[i][j];
+  }
+  return z;
+}
+
+function optimizeMODI(model,initial){
+  let alloc=initial.alloc.map(r=>[...r]);
+  let basis=makeBasis(model,alloc);
+  const iterations=[];
+  const MAX=50;
+
+  for(let it=1;it<=MAX;it++){
+    const beforeAlloc=alloc.map(r=>[...r]);
+    const basisBefore=basis.map(c=>({...c}));
+    const pot=potentials(model,basis);
+    const del=deltas(model,pot,basis);
+    let entering=null;
+
+    for(let i=0;i<model.m;i++)for(let j=0;j<model.n;j++){
+      if(!isBasic(basis,i,j)&&del[i][j]!==null&&del[i][j]<-EPS){
+        if(!entering||del[i][j]<entering.delta)entering={i,j,delta:del[i][j]};
+      }
+    }
+
+    if(!entering){
+      iterations.push({num:it,type:'optimality',beforeAlloc,basisBefore,pot,del,beforeTotal:totalCost(model,beforeAlloc)});
+      return {initialAlloc:initial.alloc,initialTotal:initial.total,alloc,total:totalCost(model,alloc),optimal:true,iterations};
+    }
+
+    const cycle=findCycle(model,basis,entering);
+    let theta=Infinity,leaving=null;
+    cycle.filter(c=>c.sign==='-').forEach(c=>{
+      if(alloc[c.i][c.j]<theta){theta=alloc[c.i][c.j];leaving={i:c.i,j:c.j};}
+    });
+
+    cycle.forEach(c=>{
+      alloc[c.i][c.j]+=c.sign==='+'?theta:-theta;
+      if(Math.abs(alloc[c.i][c.j])<EPS)alloc[c.i][c.j]=0;
+    });
+
+    const afterAlloc=alloc.map(r=>[...r]);
+    const beforeTotal=totalCost(model,beforeAlloc);
+    const afterTotal=totalCost(model,afterAlloc);
+
+    iterations.push({
+      num:it,
+      type:'improvement',
+      beforeAlloc,
+      afterAlloc,
+      basisBefore,
+      pot,
+      del,
+      entering,
+      cycle,
+      theta,
+      leaving,
+      beforeTotal,
+      afterTotal
+    });
+
+    basis=basis.filter(c=>!(c.i===leaving.i&&c.j===leaving.j));
+    basis.push({i:entering.i,j:entering.j});
+    basis=normalizeBasis(model,basis);
+  }
+
+  return {initialAlloc:initial.alloc,initialTotal:initial.total,alloc,total:totalCost(model,alloc),optimal:false,iterations};
+}
+function makeBasis(model,alloc){const b=[];for(let i=0;i<model.m;i++)for(let j=0;j<model.n;j++)if(alloc[i][j]>EPS)b.push({i,j});return normalizeBasis(model,b);}
+function normalizeBasis(model,basis){const need=model.m+model.n-1;let b=unique(basis);const uf=new DSU(model.m+model.n);b.forEach(c=>uf.union(c.i,model.m+c.j));const cand=[];for(let i=0;i<model.m;i++)for(let j=0;j<model.n;j++)if(!isBasic(b,i,j))cand.push({i,j,c:model.costs[i][j]});cand.sort((a,b)=>a.c-b.c||a.i-b.i||a.j-b.j);for(const c of cand){if(b.length>=need)break;if(uf.find(c.i)!==uf.find(model.m+c.j)){b.push({i:c.i,j:c.j,degenerate:true});uf.union(c.i,model.m+c.j);}}return b;}
+function unique(basis){const s=new Set(),o=[];basis.forEach(c=>{const k=`${c.i},${c.j}`;if(!s.has(k)){s.add(k);o.push({...c});}});return o;}
+function isBasic(basis,i,j){return basis.some(c=>c.i===i&&c.j===j);}class DSU{constructor(n){this.p=Array.from({length:n},(_,i)=>i);}find(x){while(this.p[x]!==x){this.p[x]=this.p[this.p[x]];x=this.p[x];}return x;}union(a,b){a=this.find(a);b=this.find(b);if(a!==b)this.p[b]=a;}}
+function potentials(model,basis){const u=Array(model.m).fill(null),v=Array(model.n).fill(null);u[0]=0;let ch=true;while(ch){ch=false;basis.forEach(c=>{if(u[c.i]!==null&&v[c.j]===null){v[c.j]=model.costs[c.i][c.j]-u[c.i];ch=true;}if(v[c.j]!==null&&u[c.i]===null){u[c.i]=model.costs[c.i][c.j]-v[c.j];ch=true;}});}return {u:u.map(x=>x??0),v:v.map(x=>x??0)};}
+function deltas(model,pot,basis){
+  const d=Array.from({length:model.m},()=>Array(model.n).fill(null));
+  for(let i=0;i<model.m;i++)for(let j=0;j<model.n;j++){
+    if(!isBasic(basis,i,j)){
+      d[i][j]=model.costs[i][j]>=BIG/2 ? null : model.costs[i][j]-pot.u[i]-pot.v[j];
+    }
+  }
+  return d;
+}
+function findCycle(model,basis,entering){const start=`R${entering.i}`,target=`C${entering.j}`,adj={};function add(a,b,cell){(adj[a]??=[]).push({to:b,cell});(adj[b]??=[]).push({to:a,cell});}basis.forEach(c=>add(`R${c.i}`,`C${c.j}`,{i:c.i,j:c.j}));const q=[{node:target,path:[]}],seen=new Set([target]);let found=null;while(q.length&&!found){const cur=q.shift();if(cur.node===start){found=cur.path;break;}(adj[cur.node]||[]).forEach(e=>{if(!seen.has(e.to)){seen.add(e.to);q.push({node:e.to,path:[...cur.path,e.cell]});}});}const cyc=[{i:entering.i,j:entering.j,sign:'+'}];(found||[]).forEach((cell,idx)=>cyc.push({i:cell.i,j:cell.j,sign:idx%2===0?'-':'+'}));return cyc;}
+
+function expandFlows(model,result){
+  const flows={};
+  for(let i=0;i<model.m;i++)for(let j=0;j<model.n;j++){
+    if(i===j)continue;
+    const qty=result.alloc[i][j];
+    if(qty<=EPS)continue;
+    if(model.costs[i][j]>=BIG/2)continue;
+    const key=`${model.nodes[i].id}|${model.nodes[j].id}`;
+    flows[key]=(flows[key]||0)+qty;
+  }
+  return flows;
+}
+
+function renderResults(network,model,result){
+  const flows=expandFlows(model,result);
+  let html=`<div class="summary-grid"><div class="verdict"><div class="verdict-label">${methodName(network.method)} · Solución óptima de transbordo</div><div class="verdict-value">Z* = <em>${fmt(result.total)}</em></div></div><div class="note-card"><h4>Resumen de la red</h4><p><strong>Oferta total:</strong> ${fmt(network.totalSupply)} · <strong>Demanda total:</strong> ${fmt(network.totalDemand)}</p><p style="margin-top:8px;"><strong>Costo inicial NxN:</strong> ${fmt(result.initialTotal)} · <strong>Costo óptimo:</strong> ${fmt(result.total)}</p><p style="margin-top:8px;"><strong>Tabla:</strong> ${model.m} × ${model.n}. Todos los nodos aparecen como renglón y columna.</p></div></div>`;
+
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:30px 0 14px;">Solución inicial factible</div>`;
+  html+=renderEquivalentTable(model,result.initialAlloc);
+
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Método de los multiplicadores</div>`;
+  if(result.iterations && result.iterations.length){
+    result.iterations.forEach(iter=>{html+=renderMODIIteration(model,iter);});
+  }else{
+    html+=`<div class="note-card"><h4>Sin iteraciones MODI</h4><p>No se registraron iteraciones de mejora. Revise que la solución inicial haya sido generada correctamente.</p></div>`;
+  }
+
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Solución óptima equivalente</div>`;
+  html+=renderEquivalentTable(model,result.alloc);
+
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Grafo de la solución óptima</div>`;
+  html+=`<div class="graph-wrap">${renderGraph(network,flows)}</div>`;
+
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Flujos sobre arcos originales</div>`;
+  html+=renderFlowTable(network,flows);
+
+  document.getElementById('results').innerHTML=html;
+  document.querySelector('.panel-bottom').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function renderMODIIteration(model,iter){
+  if(iter.type==='optimality'){
+    return `<div class="iter-block">
+      <div class="iter-header"><div class="iter-title">Prueba de optimalidad <em>${iter.num}</em></div><div class="iter-tag optimal">Óptima</div></div>
+      <div class="iter-body">
+        <div class="step-text">
+          Se recalculan los multiplicadores <code>uᵢ</code> y <code>vⱼ</code>. Todos los costos de oportunidad cumplen <code>Δᵢⱼ ≥ 0</code>, por lo tanto la solución actual es óptima.<br>
+          ${renderPotentials(iter.pot)}
+        </div>
+        ${renderMODITable(model,iter.beforeAlloc,iter.basisBefore,iter.del,null)}
+      </div>
+    </div>`;
+  }
+
+  const enteringLabel=`${model.origins[iter.entering.i].label} → ${model.destinations[iter.entering.j].label}`;
+  const leavingLabel=`${model.origins[iter.leaving.i].label} → ${model.destinations[iter.leaving.j].label}`;
+  return `<div class="iter-block">
+    <div class="iter-header"><div class="iter-title">Iteración MODI <em>${iter.num}</em></div><div class="iter-tag">Entra ${enteringLabel}</div></div>
+    <div class="iter-body">
+      <div class="step-text">
+        <strong>1) Cálculo de multiplicadores:</strong> con las celdas básicas se resuelve <code>uᵢ + vⱼ = cᵢⱼ</code>. Se toma <code>u₁ = 0</code> como referencia.<br>
+        ${renderPotentials(iter.pot)}
+      </div>
+      <div class="step-text">
+        <strong>2) Costos de oportunidad:</strong> para cada celda no básica se calcula <code>Δᵢⱼ = cᵢⱼ − uᵢ − vⱼ</code>. Si algún <code>Δᵢⱼ</code> es negativo, la solución puede mejorar.
+      </div>
+      ${renderMODITable(model,iter.beforeAlloc,iter.basisBefore,iter.del,iter.entering)}
+      <div class="step-text">
+        <strong>3) Variable entrante:</strong> entra <code>${enteringLabel}</code>, porque tiene el costo de oportunidad más negativo: <code>Δ = ${fmt(iter.entering.delta)}</code>.<br>
+        <strong>4) Ciclo cerrado:</strong> ${renderCycleText(model,iter.cycle)}<br>
+        <strong>5) Valor de ajuste:</strong> <code>θ = ${fmt(iter.theta)}</code>. Sale <code>${leavingLabel}</code>.<br>
+        <strong>6) Nuevo costo:</strong> pasa de <code>${fmt(iter.beforeTotal)}</code> a <code>${fmt(iter.afterTotal)}</code>.
+      </div>
+      ${renderEquivalentTable(model,iter.afterAlloc)}
+    </div>
+  </div>`;
+}
+
+function renderPotentials(pot){
+  const u=pot.u.map((x,i)=>`u${i+1}=${fmt(x)}`).join(' · ');
+  const v=pot.v.map((x,j)=>`v${j+1}=${fmt(x)}`).join(' · ');
+  return `<code>${u}</code><br><code>${v}</code>`;
+}
+
+function renderCycleText(model,cycle){
+  return cycle.map(c=>{
+    const cls=c.sign==='+'?'cycle-plus':'cycle-minus';
+    return `<code class="${cls}">${c.sign} ${model.origins[c.i].label}${model.destinations[c.j].label}</code>`;
+  }).join(' → ');
+}
+
+function renderMODITable(model,alloc,basis,del,entering){
+  let html=`<div class="table-scroll"><table class="result-table"><thead><tr><th>Nodo / Nodo</th>`;
+  model.destinations.forEach(d=>html+=`<th>${d.label}</th>`);
+  html+=`<th class="soft">Oferta fila</th></tr></thead><tbody>`;
+
+  for(let i=0;i<model.m;i++){
+    html+=`<tr><td class="label">${model.origins[i].label}</td>`;
+    for(let j=0;j<model.n;j++){
+      const basic=isBasic(basis,i,j);
+      const ent=entering && entering.i===i && entering.j===j;
+      const x=alloc[i][j];
+      const cls=ent?'used':(basic?'used':'blocked');
+      const diagonal=i===j;
+      const prohibited=model.costs[i][j]>=BIG/2;
+      let costTxt=diagonal?'c=0':(prohibited?'no permitido':`c=${fmt(model.costs[i][j])}`);
+      let deltaTxt=basic?'básica':(prohibited?'—':`Δ=${fmt(del[i][j])}`);
+      const deltaClass=!basic && !prohibited && del[i][j]<-EPS?'delta-negative':(!basic&&!prohibited?'delta-positive':'');
+      html+=`<td class="${cls}"><span class="cost-small">${costTxt} · <span class="${deltaClass}">${deltaTxt}</span></span><span class="alloc-big">${basic||x>EPS?fmt(x):'—'}</span></td>`;
+    }
+    html+=`<td class="label">${fmt(model.supply[i])}</td></tr>`;
+  }
+
+  html+=`<tr><td class="label">Demanda columna</td>`;
+  model.demand.forEach(v=>html+=`<td class="label">${fmt(v)}</td>`);
+  html+=`<td class="label">${fmt(sum(model.demand))}</td></tr></tbody></table></div>`;
+  return html;
+}
+
+function renderFlowTable(network,flows){let html=`<div class="table-scroll"><table class="result-table"><thead><tr><th>Arco</th><th>Costo unitario</th><th class="soft">Flujo óptimo</th><th>Contribución</th></tr></thead><tbody>`;network.arcs.forEach(a=>{const key=`${a.from}|${a.to}`,x=flows[key]||0;html+=`<tr><td class="label">${labelOf(network.nodes,a.from)} → ${labelOf(network.nodes,a.to)}</td><td>${fmt(a.cost)}</td><td class="${x>EPS?'used':'blocked'}">${fmt(x)}</td><td>${fmt(x*a.cost)}</td></tr>`;});html+=`</tbody></table></div>`;return html;}
+function renderEquivalentTable(model,alloc){
+  let html=`<div class="table-scroll"><table class="result-table"><thead><tr><th>Nodo / Nodo</th>`;
+  model.destinations.forEach(d=>html+=`<th>${d.label}</th>`);
+  html+=`<th class="soft">Oferta fila</th><th class="soft">Balance</th></tr></thead><tbody>`;
+
+  for(let i=0;i<model.m;i++){
+    html+=`<tr><td class="label">${model.origins[i].label}</td>`;
+    for(let j=0;j<model.n;j++){
+      const x=alloc[i][j];
+      const diagonal=i===j;
+      const prohibited=model.costs[i][j]>=BIG/2;
+      const cls=x>EPS?'used':'blocked';
+      let costLabel='';
+      if(diagonal) costLabel='diagonal c=0';
+      else if(prohibited) costLabel='arco no permitido';
+      else costLabel=`c=${fmt(model.costs[i][j])}`;
+      html+=`<td class="${cls}"><span class="cost-small">${costLabel}</span><span class="alloc-big">${x>EPS?fmt(x):'—'}</span></td>`;
+    }
+    const b=model.balance[i];
+    const btxt=b>EPS?`+${fmt(b)}`:fmt(b);
+    html+=`<td class="label">${fmt(model.supply[i])}</td><td class="label">${btxt}</td></tr>`;
+  }
+
+  html+=`<tr><td class="label">Demanda columna</td>`;
+  model.demand.forEach(v=>html+=`<td class="label">${fmt(v)}</td>`);
+  html+=`<td class="label">${fmt(sum(model.demand))}</td><td class="label">0</td></tr></tbody></table></div>`;
+  return html;
+}
+
+function renderGraph(network,flows={}){
+  const W=1040,H=520;
+  const supplies=network.nodes.filter(n=>n.type==='supply');
+  const trans=network.nodes.filter(n=>n.type==='trans');
+  const demands=network.nodes.filter(n=>n.type==='demand');
+  const pos={};
+  place(supplies,145,80,410,pos);place(trans,520,80,410,pos);place(demands,895,80,410,pos);
+  let svg=`<svg class="network-graph" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrowT" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b38a2f" /></marker></defs>`;
+  svg+=`<text x="145" y="38" style="font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;letter-spacing:.18em;fill:#11213f;font-weight:700;text-anchor:middle;">OFERTA NETA</text><text x="520" y="38" style="font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;letter-spacing:.18em;fill:#11213f;font-weight:700;text-anchor:middle;">BALANCE</text><text x="895" y="38" style="font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;letter-spacing:.18em;fill:#11213f;font-weight:700;text-anchor:middle;">DEMANDA NETA</text>`;
+  network.arcs.forEach(a=>{const p1=pos[a.from],p2=pos[a.to],key=`${a.from}|${a.to}`,x=flows[key]||0,used=x>EPS;const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;svg+=`<path class="arc ${used?'used':''}" d="M ${p1.x+36} ${p1.y} C ${mx-90} ${p1.y}, ${mx+90} ${p2.y}, ${p2.x-36} ${p2.y}" marker-end="url(#arrowT)"/>`;svg+=`<text class="arc-label ${used?'used':''}" x="${mx}" y="${my-5}">${used?`x=${fmt(x)} | c=${fmt(a.cost)}`:`c=${fmt(a.cost)}`}</text>`;});
+  network.nodes.forEach(n=>{const p=pos[n.id],cls=n.type==='supply'?'supply':n.type==='demand'?'demand':'trans';const sub=n.type==='supply'?`balance +${fmt(n.value)}`:n.type==='demand'?`balance -${fmt(n.value)}`:'balance 0';svg+=`<g class="node ${cls}"><circle cx="${p.x}" cy="${p.y}" r="34"/><text x="${p.x}" y="${p.y}">${n.label}</text><text class="sub" x="${p.x}" y="${p.y+52}">${sub}</text></g>`;});
+  svg+=`</svg>`;return svg;
+}
+function place(arr,x,top,bottom,pos){if(arr.length===0)return;const step=arr.length===1?0:(bottom-top)/(arr.length-1);arr.forEach((n,i)=>pos[n.id]={x,y:arr.length===1?(top+bottom)/2:top+i*step});}
+
+document.getElementById('solve-btn').addEventListener('click',()=>{try{const network=readNetwork();const model=buildEquivalentTransportation(network);const initial=solveInitial(model);const result=optimizeMODI(model,initial);renderResults(network,model,result);}catch(err){document.getElementById('results').innerHTML=`<div class="error-msg"><strong>Datos incompletos o inconsistentes</strong>${err.message}</div>`;}});
+
+document.getElementById('example-btn').addEventListener('click',()=>{
+  supplyInput.value=2;transInput.value=2;demandInput.value=3;document.getElementById('method').value='vogel';buildInterface();
+  const vals={S1:['O1',120],S2:['O2',100],T1:['T1',0],T2:['T2',0],D1:['D1',80],D2:['D2',70],D3:['D3',70]};
+  Object.entries(vals).forEach(([id,[name,val]])=>{document.querySelector(`.node-name[data-id="${id}"]`).value=name;document.querySelector(`.node-value[data-id="${id}"]`).value=val;});
+  document.querySelectorAll('.arc-check').forEach(c=>c.checked=false);
+  const arcs=[['S1','T1',4],['S1','T2',6],['S1','D1',9],['S2','T1',5],['S2','T2',4],['S2','D3',8],['T1','D1',3],['T1','D2',4],['T2','D2',2],['T2','D3',5],['T1','T2',1]];
+  arcs.forEach(([f,t,c])=>{const chk=document.querySelector(`.arc-check[data-from="${f}"][data-to="${t}"]`);const inp=document.querySelector(`.arc-cost[data-from="${f}"][data-to="${t}"]`);if(chk&&inp){chk.checked=true;inp.value=c;}});
+  document.getElementById('solve-btn').click();
+});
+
+buildInterface();
+// La página inicia con un ejemplo académico precargado.
+// El usuario puede modificar cualquier dato y resolver nuevamente.
+/*document.getElementById('example-btn').click();*/
+</script>
+</body>
+</html>

@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ruta Más Corta — Investigación de Operaciones</title>
+<style>
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Italic.woff2') format('woff2');font-weight:500;font-style:italic;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+
+:root{
+  --paper:#f8f6f1; --paper-2:#efe9dc; --paper-3:#d9d0bd;
+  --ink:#0a1628; --navy:#11213f; --navy-light:#2d4272;
+  --gold:#b38a2f; --gold-light:#d4b05a; --gold-soft:#e7d7aa;
+  --muted:#5b6478; --error:#8a2a2a; --success:#2a5a3a; --accent:#7c5c2e;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--paper);color:var(--ink);font-family:'Source Sans 3',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+body{min-height:100vh;background-image:radial-gradient(circle at 15% 10%, rgba(17,33,63,.045), transparent 48%),radial-gradient(circle at 85% 90%, rgba(179,138,47,.055), transparent 50%);}
+header.masthead{border-bottom:3px double var(--navy);padding:30px 48px 24px;display:grid;grid-template-columns:auto 1fr auto;gap:36px;align-items:end;background:var(--paper);position:relative;}
+header.masthead::after{content:"";position:absolute;bottom:-9px;left:0;right:0;height:1px;background:var(--gold);}
+.brand{font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:13px;letter-spacing:.22em;text-transform:uppercase;border:1.5px solid var(--navy);padding:9px 16px;background:var(--navy);color:var(--paper);}
+.title-block h1{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(36px,5vw,62px);font-weight:400;line-height:.95;letter-spacing:-.015em;color:var(--navy);}
+.title-block h1 em{font-style:italic;color:var(--gold);font-weight:500;}
+.subtitle{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;letter-spacing:.18em;color:var(--muted);margin-top:10px;text-transform:uppercase;}
+.meta{text-align:right;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;line-height:1.7;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;}
+.meta strong{display:block;color:var(--navy);font-size:11px;font-weight:700;}
+main{display:flex;flex-direction:column;min-height:calc(100vh - 130px);}
+.panel-top{border-bottom:3px double var(--navy);padding:32px 42px 34px;background:linear-gradient(180deg,var(--paper) 0%,var(--paper-2) 100%);overflow-x:auto;position:relative;}
+.panel-top::before{content:"";position:absolute;top:0;left:0;right:0;height:1px;background:var(--gold);}
+.panel-bottom{padding:36px 44px 60px;background:var(--paper);}
+.section-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:10px;font-weight:700;}
+.section-label::before{content:"§";font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:var(--gold);font-style:italic;}
+.section-title{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:500;color:var(--navy);margin-bottom:22px;line-height:1.1;}
+.config-grid{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px;margin-bottom:26px;}
+.config-row{display:flex;align-items:center;gap:14px;padding:16px 18px;background:rgba(248,246,241,.82);border:1px solid var(--paper-3);border-left:3px solid var(--navy);}
+.config-row label{font-size:14px;flex:1;color:var(--navy);font-weight:600;}
+.config-row input,.config-row select{font-family:'JetBrains Mono','Consolas',monospace;font-size:13px;padding:8px 12px;border:1.5px solid var(--navy);background:var(--paper);color:var(--navy);min-width:92px;text-align:center;font-weight:700;}
+.config-row input:focus,.config-row select:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.model-card{border:1.5px solid var(--navy);background:var(--paper);padding:22px;box-shadow:4px 4px 0 rgba(179,138,47,.35);margin-top:10px;}
+.draw-tools{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;align-items:center;}
+.tool-btn{padding:11px 15px;border:1px dashed var(--navy);background:transparent;color:var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;cursor:pointer;transition:all .2s ease;}
+.tool-btn.active,.tool-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+.draw-hint{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;color:var(--muted);letter-spacing:.04em;}
+.draw-board{width:100%;min-width:920px;height:460px;border:1.5px solid var(--navy);background:linear-gradient(180deg,rgba(248,246,241,.96),rgba(239,233,220,.42));cursor:crosshair;box-shadow:4px 4px 0 rgba(179,138,47,.24);}
+.draw-node{cursor:pointer;}
+.draw-node circle{fill:var(--paper);stroke:var(--navy);stroke-width:2.5;cursor:pointer;}
+.draw-node.selected circle{fill:var(--gold-soft);stroke:var(--gold);stroke-width:3.5;}
+.draw-node text{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:700;fill:var(--navy);font-style:italic;text-anchor:middle;dominant-baseline:middle;pointer-events:none;}
+.draw-edge{stroke:rgba(17,33,63,.45);stroke-width:2;fill:none;marker-end:url(#drawArrow);}
+.draw-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;fill:var(--navy);font-weight:800;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round;cursor:pointer;}
+.draw-label:hover{fill:var(--error);}
+.table-scroll{overflow-x:auto;padding-bottom:8px;}
+.input-table,.result-table{border-collapse:collapse;min-width:920px;width:100%;font-family:'JetBrains Mono','Consolas',monospace;font-size:12px;}
+.input-table th,.result-table th{background:var(--navy);color:var(--paper);padding:10px 12px;border-right:1px solid rgba(212,176,90,.35);border-bottom:2px solid var(--gold);text-align:center;white-space:nowrap;}
+.input-table th.soft,.result-table th.soft{background:var(--gold-soft);color:var(--navy);}
+.input-table td,.result-table td{border:1px solid var(--paper-3);padding:8px;text-align:center;background:var(--paper);color:var(--ink);font-weight:600;}
+.input-table td.label,.result-table td.label{background:var(--paper-2);color:var(--navy);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;font-weight:700;font-style:italic;}
+.cell-input{width:92px;padding:8px 7px;border:1.4px solid var(--navy);background:var(--paper);color:var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-weight:700;text-align:center;}
+.cell-input:focus{outline:2px solid var(--gold);outline-offset:2px;}
+.node-name{width:76px;}
+.actions{display:flex;gap:14px;flex-wrap:wrap;margin-top:22px;}
+.solve-btn,.example-btn{padding:17px 24px;cursor:pointer;font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;transition:all .25s ease;}
+.solve-btn{background:var(--navy);color:var(--paper);border:1.5px solid var(--navy);box-shadow:4px 4px 0 var(--gold);}
+.solve-btn:hover{background:var(--gold);border-color:var(--gold);box-shadow:4px 4px 0 var(--navy);color:var(--navy);}
+.example-btn{background:transparent;color:var(--navy);border:1px dashed var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;}
+.example-btn:hover{background:var(--navy);color:var(--paper);border-style:solid;}
+.summary-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:26px;margin-bottom:32px;}
+.verdict{border:2px solid var(--navy);background:var(--navy);color:var(--paper);box-shadow:6px 6px 0 var(--gold);padding:28px 32px;position:relative;}
+.verdict::before{content:"";position:absolute;top:8px;left:8px;right:8px;bottom:8px;border:1px solid rgba(212,176,90,.32);pointer-events:none;}
+.verdict-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-light);margin-bottom:8px;font-weight:700;}
+.verdict-value{font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(30px,4vw,48px);font-weight:400;line-height:1;color:var(--paper);}
+.verdict-value em{color:var(--gold-light);font-style:italic;font-weight:500;}
+.note-card{background:var(--paper-2);border:1.5px solid var(--navy);border-left:5px solid var(--gold);padding:22px 24px;box-shadow:4px 4px 0 var(--gold-soft);}
+.note-card h4{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:var(--navy);font-weight:500;margin-bottom:10px;border-bottom:1px solid var(--gold);padding-bottom:8px;}
+.note-card p{font-size:14px;line-height:1.7;color:var(--ink);}
+.graph-wrap{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 rgba(179,138,47,.28);padding:18px;overflow-x:auto;margin-bottom:30px;}
+svg.network-graph{width:100%;min-width:940px;height:560px;background:linear-gradient(180deg,rgba(248,246,241,.9),rgba(239,233,220,.35));}
+.node circle{fill:var(--paper);stroke:var(--navy);stroke-width:2.4;}
+.node.start circle{fill:rgba(17,33,63,.08);stroke:var(--navy);}
+.node.end circle{fill:rgba(42,90,58,.10);stroke:var(--success);}
+.node.fixed circle{fill:rgba(212,176,90,.20);stroke:var(--gold);}
+.node text{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:700;fill:var(--navy);font-style:italic;text-anchor:middle;dominant-baseline:middle;}
+.node .dist{font-family:'JetBrains Mono','Consolas',monospace;font-size:10.5px;fill:var(--muted);font-style:normal;font-weight:700;text-anchor:middle;dominant-baseline:auto;}
+.arc{stroke:rgba(17,33,63,.24);stroke-width:1.4;fill:none;}
+.arc.shortest{stroke:var(--gold);stroke-width:4;}
+.arc.relaxed{stroke:rgba(179,138,47,.55);stroke-width:2.4;}
+.arc-label{font-family:'JetBrains Mono','Consolas',monospace;font-size:11px;fill:var(--muted);font-weight:700;paint-order:stroke;stroke:var(--paper);stroke-width:5px;stroke-linejoin:round;}
+.arc-label.shortest{fill:var(--navy);font-size:12.5px;}
+.result-table td.used{background:rgba(212,176,90,.23);border:2px solid var(--gold);color:var(--navy);font-weight:900;}
+.result-table td.blocked{background:rgba(17,33,63,.055);color:var(--muted);}
+.result-table td.final{background:rgba(42,90,58,.10);border:2px solid var(--success);font-weight:900;}
+.iter-block{background:var(--paper);border:1.5px solid var(--navy);box-shadow:5px 5px 0 var(--gold-soft);margin-bottom:26px;overflow:hidden;}
+.iter-header{background:var(--navy);color:var(--paper);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);}
+.iter-title{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:23px;font-weight:500;}
+.iter-title em{color:var(--gold-light);font-style:italic;}
+.iter-tag{font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;background:var(--gold);color:var(--navy);padding:5px 12px;font-weight:800;text-transform:uppercase;}
+.step-text{background:var(--paper-2);border-left:3px solid var(--gold);padding:14px 18px;margin-bottom:14px;font-size:13px;line-height:1.65;color:var(--ink);}
+.step-text code{font-family:'JetBrains Mono','Consolas',monospace;background:var(--paper);padding:2px 8px;border:1px solid var(--paper-3);color:var(--navy);font-weight:700;font-size:12px;}
+.empty-state{text-align:center;padding:85px 20px;color:var(--muted);}
+.empty-state .icon{font-family:'Cormorant Garamond',Georgia,serif;font-style:italic;font-size:130px;line-height:1;color:var(--gold);opacity:.35;margin-bottom:20px;font-weight:300;}
+.empty-state h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:29px;font-weight:500;color:var(--navy);margin-bottom:10px;}
+.empty-state p{font-size:14px;line-height:1.7;max-width:560px;margin:0 auto;color:var(--muted);}
+.error-msg{border:2px solid var(--error);background:rgba(138,42,42,.055);padding:18px 22px;font-size:14px;line-height:1.6;color:var(--ink);margin-bottom:20px;}
+.error-msg strong{display:block;color:var(--error);font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;margin-bottom:6px;font-weight:700;}
+footer{border-top:3px double var(--navy);padding:20px 48px;font-family:'JetBrains Mono','Consolas',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;background:var(--paper);position:relative;}
+footer::before{content:"";position:absolute;top:-9px;left:0;right:0;height:1px;background:var(--gold);}
+@media(max-width:1100px){header.masthead{grid-template-columns:1fr;align-items:start;gap:16px}.meta{text-align:left}.config-grid,.summary-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:720px){.config-grid,.summary-grid{grid-template-columns:1fr}.panel-top,.panel-bottom{padding-left:22px;padding-right:22px}}
+</style>
+</head>
+<body>
+<header class="masthead">
+  <div class="brand">IO · RUTA CORTA</div>
+  <div class="title-block">
+    <h1>Ruta <em>Más Corta</em></h1>
+    <div class="subtitle">Grafo dirigido · Algoritmo de Dijkstra </div>
+  </div>
+  <div class="meta"><strong>Investigación de Operaciones</strong>Dr. Carlos Miguel López Martínez · Oaxaca<br>Edición Académica · 2026</div>
+</header>
+
+<main>
+  <section class="panel-top">
+    <div class="section-label">Configuración</div>
+    <h2 class="section-title">Construir el grafo</h2>
+    <div class="config-grid">
+      <div class="config-row"><label>Número de nodos</label><input type="number" id="num-nodes" min="2" max="12" value="2"></div>
+      <div class="config-row"><label>Nodo origen</label><select id="start-node"></select></div>
+      <div class="config-row"><label>Nodo destino</label><select id="end-node"></select></div>
+      <div class="config-row"><label>Tipo de grafo</label><select id="graph-type"><option value="directed">Dirigido</option><option value="undirected">No dirigido</option></select></div>
+    </div>
+
+    <div class="section-label">Dibujo del grafo</div>
+    <div class="model-card">
+      <div class="draw-tools">
+        <button class="tool-btn active" id="tool-node" type="button">Agregar nodo</button>
+        <button class="tool-btn" id="tool-edge" type="button">Agregar arco</button>
+        <button class="tool-btn" id="tool-delete" type="button">Eliminar arco</button>
+        <button class="tool-btn" id="tool-clear" type="button">Limpiar dibujo</button>
+        <label class="draw-hint">Distancia: <input id="edge-weight" type="number" min="0" step="any" value="1" style="width:80px;padding:7px;border:1.4px solid var(--navy);background:var(--paper);color:var(--navy);font-family:'JetBrains Mono','Consolas',monospace;font-weight:700;text-align:center;"></label>
+        <span class="draw-hint" id="draw-hint">Clic en el lienzo para agregar nodos.</span>
+      </div>
+      <div class="table-scroll"><svg id="draw-board" class="draw-board" viewBox="0 0 920 460" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    </div>
+
+    <div class="section-label">Nodos</div>
+    <div class="model-card"><div class="table-scroll" id="nodes-container"></div></div>
+
+    <div class="section-label" style="margin-top:26px;">Arcos y distancias</div>
+    <div class="model-card">
+      <div class="table-scroll" id="arcs-container"></div>
+      <div class="actions">
+        <button class="solve-btn" id="solve-btn">Resolver ruta</button>
+        <button class="example-btn" id="example-btn">↻ Cargar ejemplo</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-bottom">
+    <div id="results"><div class="empty-state"><div class="icon">↝</div><h3>Esperando el grafo</h3><p>Capture nodos, arcos y distancias. Después seleccione origen y destino para calcular la ruta más corta con Dijkstra.</p></div></div>
+  </section>
+</main>
+
+<footer><div>Método de la Ruta Más Corta · Dijkstra · Dr. Carlos Miguel López Martínez</div><div>d(origen) = 0</div></footer>
+
+<script>
+const EPS=1e-9;
+const INF=1e15;
+const numNodesInput=document.getElementById('num-nodes');
+const startSelect=document.getElementById('start-node');
+const endSelect=document.getElementById('end-node');
+const graphTypeSelect=document.getElementById('graph-type');
+const nodesContainer=document.getElementById('nodes-container');
+const arcsContainer=document.getElementById('arcs-container');
+const drawBoard=document.getElementById('draw-board');
+const toolNode=document.getElementById('tool-node');
+const toolEdge=document.getElementById('tool-edge');
+const toolClear=document.getElementById('tool-clear');
+const toolDelete=document.getElementById('tool-delete');
+const drawHint=document.getElementById('draw-hint');
+const edgeWeightInput=document.getElementById('edge-weight');
+let drawMode='node';
+let selectedDrawNode=null;
+let drawState={nodes:[],edges:[]};
+
+function clamp(input,min,max){let v=parseInt(input.value);if(isNaN(v)||v<min)v=min;if(v>max)v=max;input.value=v;return v;}
+function fmt(v){if(v>=INF/2)return '∞'; if(Math.abs(v)<1e-8)return '0'; if(Math.abs(v-Math.round(v))<1e-8)return String(Math.round(v)); return Number(v.toFixed(3)).toString();}
+function letters(n){return Array.from({length:n},(_,i)=>String.fromCharCode(65+i));}
+function resetResults(){document.getElementById('results').innerHTML='<div class="empty-state"><div class="icon">↝</div><h3>Esperando el grafo</h3><p>Capture nodos, arcos y distancias. Después seleccione origen y destino para calcular la ruta más corta con Dijkstra.</p></div>';}
+function setDrawMode(mode){
+  drawMode=mode;
+  selectedDrawNode=null;
+  toolNode.classList.toggle('active',mode==='node');
+  toolEdge.classList.toggle('active',mode==='edge');
+  toolDelete.classList.toggle('active',mode==='delete');
+  if(mode==='node') drawHint.textContent='Clic en el lienzo para agregar nodos.';
+  else if(mode==='edge') drawHint.textContent='Escriba la distancia, seleccione nodo origen y luego nodo destino.';
+  else drawHint.textContent='Seleccione nodo origen y destino para eliminar ese arco.';
+  renderDrawBoard();
+}
+function svgPoint(evt){
+  const pt=drawBoard.createSVGPoint();
+  pt.x=evt.clientX; pt.y=evt.clientY;
+  return pt.matrixTransform(drawBoard.getScreenCTM().inverse());
+}
+function renderDrawBoard(){
+  let svg='<defs><marker id="drawArrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b38a2f" /></marker></defs>';
+  drawState.edges.forEach((e,idx)=>{
+    const a=drawState.nodes[e.from], b=drawState.nodes[e.to];
+    if(!a||!b)return;
+    const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    const dx=b.x-a.x, dy=b.y-a.y, len=Math.sqrt(dx*dx+dy*dy)||1;
+    const sx=a.x+dx/len*38, sy=a.y+dy/len*38;
+    const tx=b.x-dx/len*38, ty=b.y-dy/len*38;
+    const ox=-dy/len*18, oy=dx/len*18;
+    svg+=`<path class="draw-edge" d="M ${sx} ${sy} Q ${mx+ox} ${my+oy} ${tx} ${ty}"/>`;
+    svg+=`<text class="draw-label" data-edge="${idx}" x="${mx+ox}" y="${my+oy-5}">${fmt(e.w)}</text>`;
+  });
+  drawState.nodes.forEach((n,i)=>{
+    svg+=`<g class="draw-node ${selectedDrawNode===i?'selected':''}" data-i="${i}"><circle cx="${n.x}" cy="${n.y}" r="34"/><text x="${n.x}" y="${n.y}">${n.name}</text></g>`;
+  });
+  drawBoard.innerHTML=svg;
+  drawBoard.querySelectorAll('.draw-node').forEach(g=>{
+    g.addEventListener('click',evt=>{evt.stopPropagation();handleDrawNodeClick(+g.dataset.i);});
+  });
+  drawBoard.querySelectorAll('.draw-label').forEach(label=>{
+    label.addEventListener('click',evt=>{evt.stopPropagation();editDrawEdge(+label.dataset.edge);});
+  });
+}
+function editDrawEdge(edgeIndex){
+  const e=drawState.edges[edgeIndex];
+  if(!e)return;
+  const from=drawState.nodes[e.from]?.name || '?';
+  const to=drawState.nodes[e.to]?.name || '?';
+  const value=prompt(`Nueva distancia para ${from} → ${to}:`, fmt(e.w));
+  if(value===null)return;
+  const w=parseFloat(value);
+  if(isNaN(w)||w<0){drawHint.textContent='La distancia debe ser un número mayor o igual que cero.';return;}
+  e.w=w;
+  syncTablesFromDrawing();
+  drawHint.textContent=`Distancia actualizada: ${from} → ${to} = ${fmt(w)}.`;
+  resetResults();
+  renderDrawBoard();
+}
+function handleDrawNodeClick(i){
+  if(drawMode==='delete'){
+    if(selectedDrawNode===null){
+      selectedDrawNode=i;
+      drawHint.textContent=`Origen seleccionado: ${drawState.nodes[i].name}. Ahora seleccione el destino del arco a eliminar.`;
+      renderDrawBoard();
+      return;
+    }
+    if(selectedDrawNode===i){selectedDrawNode=null;renderDrawBoard();return;}
+    const from=selectedDrawNode, to=i;
+    const before=drawState.edges.length;
+    drawState.edges=drawState.edges.filter(e=>!(e.from===from&&e.to===to));
+    syncTablesFromDrawing();
+    selectedDrawNode=null;
+    drawHint.textContent=before!==drawState.edges.length?`Arco eliminado: ${drawState.nodes[from].name} → ${drawState.nodes[to].name}.`:'No existía ese arco.';
+    resetResults();
+    renderDrawBoard();
+    return;
+  }
+  if(drawMode!=='edge')return;
+  if(selectedDrawNode===null){
+    selectedDrawNode=i;
+    drawHint.textContent=`Origen seleccionado: ${drawState.nodes[i].name}. Ahora seleccione el nodo destino.`;
+    renderDrawBoard();
+    return;
+  }
+  if(selectedDrawNode===i){
+    selectedDrawNode=null;
+    drawHint.textContent='Selección cancelada. Elija nuevamente el nodo origen.';
+    renderDrawBoard();
+    return;
+  }
+  const from=selectedDrawNode, to=i;
+  const w=parseFloat(edgeWeightInput.value);
+  if(isNaN(w)||w<0){drawHint.textContent='La distancia debe ser un número mayor o igual que cero.';return;}
+  const existing=drawState.edges.find(e=>e.from===from&&e.to===to);
+  if(existing)existing.w=w; else drawState.edges.push({from,to,w});
+  syncTablesFromDrawing();
+  selectedDrawNode=null;
+  drawHint.textContent=`Arco creado: ${drawState.nodes[from].name} → ${drawState.nodes[to].name}, distancia ${fmt(w)}.`;
+  resetResults();
+  renderDrawBoard();
+}
+function syncTablesFromDrawing(){
+  if(drawState.nodes.length<2){buildInterface();return;}
+  numNodesInput.value=drawState.nodes.length;
+  buildInterface();
+  drawState.nodes.forEach((n,i)=>{const inp=document.querySelector(`.node-name[data-i="${i}"]`); if(inp)inp.value=n.name;});
+  buildInterface();
+  startSelect.value='0'; endSelect.value=String(drawState.nodes.length-1);
+  document.querySelectorAll('.arc-check').forEach(c=>c.checked=false);
+  drawState.edges.forEach(e=>{
+    const chk=document.querySelector(`.arc-check[data-from="${e.from}"][data-to="${e.to}"]`);
+    const inp=document.querySelector(`.arc-dist[data-from="${e.from}"][data-to="${e.to}"]`);
+    if(chk&&inp){chk.checked=true;inp.value=e.w;}
+  });
+}
+function loadDrawingFromTables(){
+  const names=[...document.querySelectorAll('.node-name')].map((x,i)=>x.value.trim()||String.fromCharCode(65+i));
+  const n=names.length;
+  const cx=460,cy=230,r=160;
+  drawState.nodes=names.map((name,i)=>{const ang=-Math.PI/2+(2*Math.PI*i/n);return {name,x:cx+r*Math.cos(ang),y:cy+r*Math.sin(ang)};});
+  drawState.edges=[];
+  document.querySelectorAll('.arc-check').forEach(chk=>{
+    if(!chk.checked)return;
+    const from=+chk.dataset.from,to=+chk.dataset.to;
+    const inp=document.querySelector(`.arc-dist[data-from="${from}"][data-to="${to}"]`);
+    const w=parseFloat(inp.value);
+    if(!isNaN(w))drawState.edges.push({from,to,w});
+  });
+  renderDrawBoard();
+}
+
+function buildInterface(){
+  const oldNames=[...document.querySelectorAll('.node-name')].map(x=>({i:+x.dataset.i,v:x.value}));
+  const oldArc=[...document.querySelectorAll('.arc-dist')].map(x=>({from:+x.dataset.from,to:+x.dataset.to,v:x.value,checked:x.closest('td').querySelector('.arc-check')?.checked}));
+  const getName=i=>oldNames.find(x=>x.i===i)?.v;
+  const getArc=(i,j)=>oldArc.find(x=>x.from===i&&x.to===j);
+  const n=clamp(numNodesInput,2,12);
+  const base=letters(n);
+  const nodes=base.map((l,i)=>getName(i)||l);
+
+  let nodeHtml='<table class="input-table"><thead><tr><th>Nodo</th><th class="soft">Nombre</th><th>Interpretación</th></tr></thead><tbody>';
+  nodes.forEach((name,i)=>{nodeHtml+=`<tr><td class="label">N<sub>${i+1}</sub></td><td><input class="cell-input node-name" data-i="${i}" value="${name}"></td><td>Vértice del grafo</td></tr>`;});
+  nodeHtml+='</tbody></table>';
+  nodesContainer.innerHTML=nodeHtml;
+
+  const prevStart=startSelect.value;
+  const prevEnd=endSelect.value;
+  startSelect.innerHTML=''; endSelect.innerHTML='';
+  nodes.forEach((name,i)=>{startSelect.innerHTML+=`<option value="${i}">${name}</option>`;endSelect.innerHTML+=`<option value="${i}">${name}</option>`;});
+  startSelect.value=prevStart && +prevStart<n ? prevStart : '0';
+  endSelect.value=prevEnd && +prevEnd<n ? prevEnd : String(n-1);
+
+  let arcHtml='<table class="input-table"><thead><tr><th>Desde / Hacia</th>';
+  nodes.forEach(name=>arcHtml+=`<th>${name}</th>`);
+  arcHtml+='</tr></thead><tbody>';
+  nodes.forEach((fromName,i)=>{
+    arcHtml+=`<tr><td class="label">${fromName}</td>`;
+    nodes.forEach((toName,j)=>{
+      if(i===j){arcHtml+='<td class="blocked">—</td>';return;}
+      const old=getArc(i,j);
+      const checked=old?old.checked:false;
+      const val=old?.v??'';
+      arcHtml+=`<td><label style="display:block;font-size:10px;color:var(--muted);font-weight:700;"><input type="checkbox" class="arc-check" data-from="${i}" data-to="${j}" ${checked?'checked':''}> arco</label><input class="cell-input arc-dist" type="number" step="any" min="0" data-from="${i}" data-to="${j}" value="${val}" placeholder="d"></td>`;
+    });
+    arcHtml+='</tr>';
+  });
+  arcHtml+='</tbody></table>';
+  arcsContainer.innerHTML=arcHtml;
+}
+
+numNodesInput.addEventListener('change',()=>{buildInterface();loadDrawingFromTables();resetResults();});
+toolNode.addEventListener('click',()=>setDrawMode('node'));
+toolEdge.addEventListener('click',()=>setDrawMode('edge'));
+toolDelete.addEventListener('click',()=>setDrawMode('delete'));
+toolClear.addEventListener('click',()=>{
+  drawState={nodes:[],edges:[]};
+  selectedDrawNode=null;
+  numNodesInput.value=2;
+  buildInterface();
+  renderDrawBoard();
+  resetResults();
+  drawHint.textContent='Dibujo limpio. Clic en el lienzo para agregar nodos.';
+});
+drawBoard.addEventListener('click',evt=>{
+  if(drawMode!=='node')return;
+  const p=svgPoint(evt);
+  const name=String.fromCharCode(65+drawState.nodes.length);
+  drawState.nodes.push({name,x:p.x,y:p.y});
+  syncTablesFromDrawing();
+  resetResults();
+  renderDrawBoard();
+});
+graphTypeSelect.addEventListener('change',()=>{});
+arcsContainer.addEventListener('input',evt=>{if(evt.target.classList.contains('arc-dist')){loadDrawingFromTables();resetResults();}});
+arcsContainer.addEventListener('change',evt=>{if(evt.target.classList.contains('arc-check')){loadDrawingFromTables();resetResults();}});
+nodesContainer.addEventListener('input',evt=>{if(evt.target.classList.contains('node-name')){loadDrawingFromTables();resetResults();}});
+
+function readGraph(){
+  const nodes=[...document.querySelectorAll('.node-name')].map((x,i)=>x.value.trim()||String.fromCharCode(65+i));
+  const start=+startSelect.value;
+  const end=+endSelect.value;
+  if(start===end)throw new Error('El nodo origen y el nodo destino deben ser diferentes.');
+  const directed=graphTypeSelect.value==='directed';
+  const edges=[];
+  document.querySelectorAll('.arc-check').forEach(chk=>{
+    if(!chk.checked)return;
+    const from=+chk.dataset.from,to=+chk.dataset.to;
+    const inp=document.querySelector(`.arc-dist[data-from="${from}"][data-to="${to}"]`);
+    const w=parseFloat(inp.value);
+    if(isNaN(w)||w<0)throw new Error(`La distancia del arco ${nodes[from]} → ${nodes[to]} debe ser no negativa.`);
+    edges.push({from,to,w});
+    if(!directed)edges.push({from:to,to:from,w});
+  });
+  if(edges.length===0)throw new Error('Debe capturar al menos un arco.');
+  const positions=nodes.map((name,i)=>{
+    const p=drawState.nodes[i];
+    return p ? {x:p.x,y:p.y} : null;
+  });
+  return {nodes,start,end,directed,edges,positions};
+}
+
+function dijkstra(graph){
+  const n=graph.nodes.length;
+  const dist=Array(n).fill(INF);
+  const prev=Array(n).fill(null);
+  const fixed=Array(n).fill(false);
+  const iterations=[];
+  dist[graph.start]=0;
+  for(let step=1;step<=n;step++){
+    let u=-1,best=INF;
+    for(let i=0;i<n;i++)if(!fixed[i]&&dist[i]<best){best=dist[i];u=i;}
+    if(u===-1)break;
+    const before=dist.slice();
+    fixed[u]=true;
+    const relax=[];
+    graph.edges.filter(e=>e.from===u).forEach(e=>{
+      if(fixed[e.to])return;
+      const candidate=dist[u]+e.w;
+      const improved=candidate<dist[e.to]-EPS;
+      relax.push({to:e.to,w:e.w,old:dist[e.to],candidate,improved});
+      if(improved){dist[e.to]=candidate;prev[e.to]=u;}
+    });
+    iterations.push({step,u,before,after:dist.slice(),prev:prev.slice(),fixed:fixed.slice(),relax});
+    if(u===graph.end)break;
+  }
+  const path=[];
+  if(dist[graph.end]<INF/2){let cur=graph.end;while(cur!==null){path.unshift(cur);cur=prev[cur];}}
+  return {dist,prev,path,total:dist[graph.end],iterations};
+}
+
+function renderResults(graph,result){
+  const pathEdges=new Set();
+  for(let i=0;i<result.path.length-1;i++)pathEdges.add(`${result.path[i]}|${result.path[i+1]}`);
+  let html=`<div class="summary-grid"><div class="verdict"><div class="verdict-label">Ruta más corta · ${graph.nodes[graph.start]} → ${graph.nodes[graph.end]}</div><div class="verdict-value">d* = <em>${fmt(result.total)}</em></div></div><div class="note-card"><h4>Ruta óptima</h4><p>${result.path.length?result.path.map(i=>graph.nodes[i]).join(' → '):'No existe ruta factible hacia el destino seleccionado.'}</p><p style="margin-top:8px;"><strong>Iteraciones:</strong> ${result.iterations.length}</p></div></div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:30px 0 14px;">Grafo de la ruta más corta</div>`;
+  html+=`<div class="graph-wrap">${renderGraph(graph,result,pathEdges)}</div>`;
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Tabla final de etiquetas</div>`;
+  html+=renderLabelTable(graph,result);
+  html+=`<div class="section-label" style="color:var(--navy);font-size:11px;margin:34px 0 14px;">Iteraciones de Dijkstra</div>`;
+  result.iterations.forEach(iter=>html+=renderIteration(graph,iter));
+  document.getElementById('results').innerHTML=html;
+  document.querySelector('.panel-bottom').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderLabelTable(graph,result){
+  let html='<div class="table-scroll"><table class="result-table"><thead><tr><th>Nodo</th><th class="soft">Distancia final</th><th>Predecesor</th><th>Estado</th></tr></thead><tbody>';
+  graph.nodes.forEach((name,i)=>{
+    const inPath=result.path.includes(i);
+    html+=`<tr><td class="label">${name}</td><td class="${inPath?'used':'blocked'}">${fmt(result.dist[i])}</td><td>${result.prev[i]===null?'—':graph.nodes[result.prev[i]]}</td><td class="${result.dist[i]<INF/2?'final':'blocked'}">${result.dist[i]<INF/2?'alcanzable':'no alcanzable'}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+function renderIteration(graph,iter){
+  let html=`<div class="iter-block"><div class="iter-header"><div class="iter-title">Iteración <em>${iter.step}</em></div><div class="iter-tag">Fijo: ${graph.nodes[iter.u]}</div></div><div style="padding:20px 22px;">`;
+  html+=`<div class="step-text">Se selecciona como permanente el nodo <code>${graph.nodes[iter.u]}</code>, porque tiene la menor distancia temporal disponible: <code>${fmt(iter.before[iter.u])}</code>.</div>`;
+  if(iter.relax.length){
+    html+='<div class="step-text"><strong>Relajación de arcos:</strong><br>';
+    iter.relax.forEach(r=>{html+=`<code>${graph.nodes[iter.u]} → ${graph.nodes[r.to]}</code>: min(${fmt(r.old)}, ${fmt(iter.before[iter.u])} + ${fmt(r.w)}) = <code>${fmt(Math.min(r.old,r.candidate))}</code>${r.improved?' · mejora':''}<br>`;});
+    html+='</div>';
+  } else html+='<div class="step-text">El nodo seleccionado no genera mejoras adicionales.</div>';
+  html+=renderIterationTable(graph,iter);
+  html+='</div></div>';
+  return html;
+}
+function renderIterationTable(graph,iter){
+  let html='<div class="table-scroll"><table class="result-table"><thead><tr><th>Nodo</th><th>Antes</th><th class="soft">Después</th><th>Predecesor</th><th>Estado</th></tr></thead><tbody>';
+  graph.nodes.forEach((name,i)=>{
+    const fixed=iter.fixed[i];
+    const changed=Math.abs(iter.before[i]-iter.after[i])>EPS && !(iter.before[i]>=INF/2&&iter.after[i]>=INF/2);
+    html+=`<tr><td class="label">${name}</td><td>${fmt(iter.before[i])}</td><td class="${changed?'used':'blocked'}">${fmt(iter.after[i])}</td><td>${iter.prev[i]===null?'—':graph.nodes[iter.prev[i]]}</td><td class="${fixed?'final':'blocked'}">${fixed?'permanente':'temporal'}</td></tr>`;
+  });
+  html+='</tbody></table></div>';
+  return html;
+}
+function renderGraph(graph,result,pathEdges){
+  const W=1040,H=560;
+  const pos={};
+  graph.nodes.forEach((name,i)=>{
+    if(graph.positions && graph.positions[i]){
+      const scaleX=W/920;
+      const scaleY=H/460;
+      pos[i]={x:graph.positions[i].x*scaleX,y:graph.positions[i].y*scaleY};
+    }else{
+      const cx=520,cy=280,r=205;
+      const ang=-Math.PI/2+(2*Math.PI*i/graph.nodes.length);
+      pos[i]={x:cx+r*Math.cos(ang),y:cy+r*Math.sin(ang)};
+    }
+  });
+  let svg='<svg class="network-graph" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg"><defs><marker id="arrowD" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#b38a2f" /></marker></defs>';
+  graph.edges.forEach((e,idx)=>{
+    if(!graph.directed && e.from>e.to)return;
+    const p1=pos[e.from],p2=pos[e.to];
+    const key=`${e.from}|${e.to}`;
+    const shortest=pathEdges.has(key) || (!graph.directed && pathEdges.has(`${e.to}|${e.from}`));
+    const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
+    const dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy)||1;
+    const ox=-dy/len*18,oy=dx/len*18;
+    svg+=`<path class="arc ${shortest?'shortest':''}" d="M ${p1.x} ${p1.y} Q ${mx+ox} ${my+oy} ${p2.x} ${p2.y}" ${graph.directed?'marker-end="url(#arrowD)"':''}/>`;
+    svg+=`<text class="arc-label ${shortest?'shortest':''}" x="${mx+ox}" y="${my+oy-5}">${fmt(e.w)}</text>`;
+  });
+  graph.nodes.forEach((name,i)=>{
+    const p=pos[i];
+    const cls=i===graph.start?'start':i===graph.end?'end':(result.path.includes(i)?'fixed':'');
+    svg+=`<g class="node ${cls}"><circle cx="${p.x}" cy="${p.y}" r="35"/><text x="${p.x}" y="${p.y}">${name}</text><text class="dist" x="${p.x}" y="${p.y+54}">d=${fmt(result.dist[i])}</text></g>`;
+  });
+  svg+='</svg>';
+  return svg;
+}
+
+document.getElementById('solve-btn').addEventListener('click',()=>{
+  try{const graph=readGraph();const result=dijkstra(graph);renderResults(graph,result);}catch(err){document.getElementById('results').innerHTML=`<div class="error-msg"><strong>Datos incompletos o inconsistentes</strong>${err.message}</div>`;}
+});
+document.getElementById('example-btn').addEventListener('click',()=>{
+  numNodesInput.value=6; graphTypeSelect.value='directed'; buildInterface();
+  const names=['A','B','C','D','E','F'];
+  names.forEach((v,i)=>document.querySelector(`.node-name[data-i="${i}"]`).value=v);
+  buildInterface();
+  startSelect.value='0'; endSelect.value='5';
+  document.querySelectorAll('.arc-check').forEach(c=>c.checked=false);
+  const arcs=[[0,1,7],[0,2,9],[0,5,14],[1,2,10],[1,3,15],[2,3,11],[2,5,2],[3,4,6],[4,5,9],[5,4,9]];
+  arcs.forEach(([f,t,w])=>{const chk=document.querySelector(`.arc-check[data-from="${f}"][data-to="${t}"]`);const inp=document.querySelector(`.arc-dist[data-from="${f}"][data-to="${t}"]`);if(chk&&inp){chk.checked=true;inp.value=w;}});
+  loadDrawingFromTables();
+  document.getElementById('solve-btn').click();
+});
+function runSelfTests(){
+  const graph={nodes:['A','B','C','D'],start:0,end:3,directed:true,edges:[{from:0,to:1,w:2},{from:0,to:2,w:5},{from:1,to:2,w:1},{from:1,to:3,w:4},{from:2,to:3,w:1}]};
+  const result=dijkstra(graph);
+  console.assert(result.total===4,'Test Dijkstra: distancia esperada 4');
+  console.assert(result.path.join('-')==='0-1-2-3','Test Dijkstra: ruta esperada A-B-C-D');
+  drawState={nodes:[{name:'A',x:100,y:100},{name:'B',x:220,y:100}],edges:[{from:0,to:1,w:7}]};
+  renderDrawBoard();
+  console.assert(drawBoard.querySelectorAll('.draw-label').length===1,'Test dibujo: debe renderizar una etiqueta de arco');
+  const graphWithPositions={nodes:['A','B'],start:0,end:1,directed:true,edges:[{from:0,to:1,w:7}],positions:[{x:100,y:100},{x:220,y:100}]};
+  const rendered=renderGraph(graphWithPositions,{dist:[0,7],path:[0,1]},new Set(['0|1']));
+  console.assert(rendered.includes('113.043') || rendered.includes('113.04'), 'Test posiciones: el grafo final debe usar coordenadas del dibujo escaladas');
+}
+buildInterface();
+renderDrawBoard();
+runSelfTests();
+</script>
+</body>
+</html>
