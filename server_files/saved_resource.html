@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<!-- saved from url=(0040)https://web-sandbox.oaiusercontent.com/? -->
+<html lang="es"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Investigación de Operaciones — Portal Académico</title>
+<style>
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-SemiBold.woff2') format('woff2');font-weight:600;font-style:normal;font-display:swap;}
+@font-face{font-family:'Cormorant Garamond';src:url('./fonts/Cormorant/CormorantGaramond-Italic.woff2') format('woff2');font-weight:500;font-style:italic;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'JetBrains Mono';src:url('./fonts/JetBrainsMono/JetBrainsMono-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Regular.woff2') format('woff2');font-weight:400;font-style:normal;font-display:swap;}
+@font-face{font-family:'Source Sans 3';src:url('./fonts/SourceSans3/SourceSans3-Bold.woff2') format('woff2');font-weight:700;font-style:normal;font-display:swap;}
+
+:root{
+  --paper:#f8f6f1;
+  --paper-2:#efe9dc;
+  --paper-3:#d9d0bd;
+  --ink:#0a1628;
+  --navy:#11213f;
+  --navy-2:#1d315d;
+  --gold:#b38a2f;
+  --gold-2:#d4b05a;
+  --gold-soft:#e7d7aa;
+  --muted:#5b6478;
+  --success:#2a5a3a;
+  --white:#fffdfa;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 10% 4%,rgba(179,138,47,.13),transparent 34%),
+    radial-gradient(circle at 92% 10%,rgba(17,33,63,.10),transparent 38%),
+    linear-gradient(180deg,var(--paper),#f3eee2 55%,var(--paper));
+  color:var(--ink);
+  font-family:'Source Sans 3',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+a{color:inherit;text-decoration:none;}
+
+/* =========================
+   NAVBAR
+========================= */
+.topbar{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:rgba(248,246,241,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(17,33,63,.18);
+}
+.nav{
+  max-width:1240px;
+  margin:0 auto;
+  padding:14px 28px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+}
+.nav-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:max-content;
+}
+.brand-mark{
+  width:42px;
+  height:42px;
+  border:1.5px solid var(--navy);
+  background:var(--navy);
+  color:var(--gold-2);
+  display:grid;
+  place-items:center;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:21px;
+  font-weight:700;
+  font-style:italic;
+  box-shadow:3px 3px 0 var(--gold-soft);
+}
+.nav-brand strong{
+  display:block;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  color:var(--navy);
+  font-size:22px;
+  line-height:1;
+}
+.nav-brand span{
+  display:block;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:9px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-top:3px;
+}
+.nav-links{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+  gap:8px;
+}
+.nav-links a{
+  padding:9px 12px;
+  border:1px solid transparent;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:10px;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  color:var(--navy);
+  font-weight:700;
+}
+.nav-links a:hover{
+  border-color:var(--gold);
+  background:rgba(179,138,47,.10);
+}
+
+/* =========================
+   HERO
+========================= */
+.hero{
+  max-width:1240px;
+  margin:0 auto;
+  padding:58px 28px 44px;
+  display:grid;
+  grid-template-columns:minmax(0,1.12fr) minmax(300px,.88fr);
+  gap:34px;
+  align-items:stretch;
+}
+.hero-copy{
+  position:relative;
+  overflow:hidden;
+  border:1.5px solid var(--navy);
+  background:linear-gradient(135deg,var(--navy),#172b52 54%,#0d1830);
+  color:var(--paper);
+  padding:42px 300px 42px 42px;
+  min-height:520px;
+  box-shadow:9px 9px 0 rgba(179,138,47,.28);
+}
+.hero-copy::before{
+  content:"IO";
+  position:absolute;
+  right:-24px;
+  bottom:-70px;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:230px;
+  line-height:1;
+  color:rgba(212,176,90,.10);
+  font-style:italic;
+}
+
+.hero-photo{
+  position:absolute;
+  right:42px;
+  bottom:42px;
+  width:190px;
+  height:190px;
+  border:4px solid rgba(212,176,90,.90);
+  overflow:hidden;
+  box-shadow:8px 8px 0 rgba(0,0,0,.20);
+  z-index:2;
+  background:#ddd;
+}
+
+.profile-photo{
+   width:100%;
+   height:100%;
+   object-fit:cover;
+   display:block;
+}
+.kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  padding:7px 12px;
+  border:1px solid rgba(212,176,90,.55);
+  color:var(--gold-2);
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  margin-bottom:22px;
+}
+.kicker::before{content:"§";font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;font-style:italic;}
+.hero h1{
+  position:relative;
+  z-index:1;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:clamp(46px,6vw,86px);
+  line-height:.91;
+  font-weight:400;
+  letter-spacing:-.025em;
+  max-width:850px;
+}
+.hero h1 em{color:var(--gold-2);font-style:italic;font-weight:500;}
+.hero-text{
+  position:relative;
+  z-index:1;
+  max-width:780px;
+  margin-top:24px;
+  display:grid;
+  gap:14px;
+}
+.hero-text p{
+  font-size:16px;
+  line-height:1.78;
+  color:rgba(248,246,241,.91);
+}
+.hero-actions{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  margin-top:30px;
+}
+.btn-primary,.btn-outline{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:48px;
+  padding:14px 20px;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  transition:.2s ease;
+}
+.btn-primary{
+  background:var(--gold);
+  color:var(--navy);
+  border:1.5px solid var(--gold);
+  box-shadow:4px 4px 0 rgba(248,246,241,.22);
+}
+.btn-primary:hover{background:var(--paper);border-color:var(--paper);transform:translate(-1px,-1px);}
+.btn-outline{
+  color:var(--paper);
+  border:1px dashed rgba(248,246,241,.65);
+}
+.btn-outline:hover{background:rgba(248,246,241,.10);border-style:solid;}
+
+.identity-panel{
+  display:grid;
+  grid-template-rows:auto auto;
+  align-content:start;
+  gap:14px;
+}
+.logo-box,.photo-box,.contact-mini{
+  background:rgba(255,253,250,.76);
+  border:1.5px solid var(--navy);
+  box-shadow:5px 5px 0 rgba(179,138,47,.24);
+}
+.logo-box{
+  min-height:82px;
+  display:grid;
+  place-items:center;
+  padding:16px;
+  border-style:dashed;
+  text-align:center;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  color:var(--muted);
+  font-size:10px;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+.photo-box{
+   width:220px;
+   height:220px;
+   border:3px solid var(--gold);
+   overflow:hidden;
+   background:#ddd;
+   display:flex;
+   align-items:center;
+   justify-content:center;
+}
+
+.profile-photo{
+   width:100%;
+   height:100%;
+   object-fit:cover;
+   display:block;
+}
+.contact-mini{
+  padding:20px;
+  background:var(--paper);
+  min-height:0;
+}
+.contact-mini strong{
+  display:block;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:22px;
+  color:var(--navy);
+  font-style:italic;
+  line-height:1;
+  margin-bottom:8px;
+}
+.contact-mini span{
+  display:block;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:9px;
+  line-height:1.8;
+  letter-spacing:.10em;
+  color:var(--muted);
+  text-transform:uppercase;
+}
+
+/* =========================
+   STATS
+========================= */
+.stats{
+  max-width:1240px;
+  margin:0 auto;
+  padding:0 28px 18px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+}
+.stat-card{
+  border:1px solid rgba(17,33,63,.25);
+  background:rgba(255,253,250,.76);
+  padding:20px;
+  box-shadow:3px 3px 0 rgba(179,138,47,.18);
+}
+.stat-card .num{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  color:var(--navy);
+  font-size:42px;
+  font-style:italic;
+  line-height:1;
+}
+.stat-card .label{
+  margin-top:6px;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:10px;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--muted);
+  font-weight:700;
+}
+
+/* =========================
+   METHODS
+========================= */
+main{
+  max-width:1240px;
+  margin:0 auto;
+  padding:34px 28px 72px;
+}
+.section-title-row{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:24px;
+  margin:36px 0 20px;
+  border-bottom:1px solid var(--gold);
+  padding-bottom:14px;
+}
+.section-title-row h2{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:42px;
+  font-weight:500;
+  color:var(--navy);
+  line-height:1;
+}
+.section-title-row p{
+  max-width:650px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.6;
+  text-align:right;
+}
+.category{
+  margin-bottom:36px;
+}
+.category-head{
+  display:grid;
+  grid-template-columns:90px 1fr;
+  gap:18px;
+  align-items:stretch;
+  margin-bottom:14px;
+}
+.category-number{
+  border:1.5px solid var(--navy);
+  background:var(--navy);
+  color:var(--gold-2);
+  display:grid;
+  place-items:center;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:46px;
+  font-style:italic;
+  box-shadow:4px 4px 0 var(--gold-soft);
+}
+.category-info{
+  border:1.5px solid rgba(17,33,63,.32);
+  background:rgba(255,253,250,.72);
+  padding:18px 22px;
+}
+.category-info .label{
+  font-family:'JetBrains Mono','Consolas',monospace;
+  color:var(--gold);
+  font-size:10px;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  font-weight:800;
+  margin-bottom:6px;
+}
+.category-info h3{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  color:var(--navy);
+  font-size:31px;
+  font-weight:500;
+  line-height:1;
+}
+.category-info p{
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.6;
+  margin-top:8px;
+  max-width:900px;
+}
+.method-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
+  padding-left:108px;
+}
+.method-card{
+  position:relative;
+  min-height:254px;
+  padding:20px;
+  background:var(--white);
+  border:1.5px solid rgba(17,33,63,.72);
+  box-shadow:4px 4px 0 rgba(179,138,47,.22);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  transition:.18s ease;
+}
+.method-card::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:5px;
+  background:linear-gradient(90deg,var(--gold),var(--navy));
+}
+.method-card:hover{
+  transform:translateY(-4px);
+  box-shadow:7px 8px 0 rgba(179,138,47,.30);
+}
+.method-tag{
+  align-self:flex-start;
+  margin-top:4px;
+  padding:5px 9px;
+  background:var(--paper-2);
+  border:1px solid var(--paper-3);
+  color:var(--muted);
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+}
+.method-card h4{
+  margin-top:15px;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  color:var(--navy);
+  font-size:28px;
+  font-weight:500;
+  line-height:1.04;
+}
+.method-card h4 em{color:var(--gold);font-style:italic;}
+.method-card p{
+  margin-top:10px;
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.62;
+}
+.pills{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:auto;
+  padding-top:16px;
+}
+.pill{
+  border:1px solid var(--paper-3);
+  background:var(--paper);
+  color:var(--muted);
+  padding:4px 7px;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:9.5px;
+  font-weight:800;
+}
+.method-actions{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:9px;
+  margin-top:16px;
+}
+.open-link{
+  background:var(--navy);
+  color:var(--paper);
+  border:1.5px solid var(--navy);
+  text-align:center;
+  padding:12px 13px;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:10px;
+  letter-spacing:.13em;
+  text-transform:uppercase;
+  font-weight:900;
+}
+.open-link:hover{background:var(--gold);color:var(--navy);border-color:var(--gold);}
+.ref-badge{
+  display:grid;
+  place-items:center;
+  min-width:76px;
+  padding:10px;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:9px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  font-weight:900;
+  border:1px dashed var(--success);
+  color:var(--success);
+  background:rgba(42,90,58,.06);
+}
+.ref-badge.pending{border-color:var(--gold);color:var(--gold);background:rgba(179,138,47,.08);}
+
+/* =========================
+   INFO
+========================= */
+.info-area{
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:22px;
+  margin-top:46px;
+}
+.info-card{
+  background:var(--paper-2);
+  border:1.5px solid var(--navy);
+  border-left:6px solid var(--gold);
+  padding:26px;
+  box-shadow:5px 5px 0 var(--gold-soft);
+}
+.info-card h2{
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:32px;
+  color:var(--navy);
+  font-weight:500;
+  margin-bottom:12px;
+  border-bottom:1px solid var(--gold);
+  padding-bottom:8px;
+}
+.info-card p,.info-card li{
+  color:var(--ink);
+  font-size:14px;
+  line-height:1.75;
+}
+.info-card ul{padding-left:19px;}
+.contact-list{display:grid;gap:10px;margin-top:14px;}
+.contact-item{
+  background:var(--paper);
+  border:1px solid var(--paper-3);
+  border-left:4px solid var(--gold);
+  padding:12px 14px;
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:12px;
+  color:var(--navy);
+}
+.contact-item strong{
+  display:block;
+  font-family:'Cormorant Garamond',Georgia,serif;
+  font-size:20px;
+  color:var(--navy);
+  font-style:italic;
+  margin-bottom:4px;
+}
+footer{
+  border-top:3px double var(--navy);
+  padding:20px 28px;
+  color:var(--muted);
+  font-family:'JetBrains Mono','Consolas',monospace;
+  font-size:10px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  display:flex;
+  gap:18px;
+  justify-content:space-between;
+  max-width:1240px;
+  margin:0 auto;
+}
+
+@media(max-width:1050px){
+  .hero{grid-template-columns:1fr;}
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .info-area{grid-template-columns:1fr;}
+  .section-title-row{display:block;}
+  .section-title-row p{text-align:left;margin-top:8px;}
+}
+@media(max-width:760px){
+  .nav{align-items:flex-start;flex-direction:column;}
+  .nav-links{justify-content:flex-start;}
+  .hero{padding-top:28px;}
+  .hero-copy{padding:28px;min-height:auto;}
+  .hero-photo{position:relative;right:auto;bottom:auto;margin-top:24px;width:160px;height:160px;}
+  .stats{grid-template-columns:1fr;}
+  .category-head{grid-template-columns:1fr;}
+  .category-number{height:72px;}
+  .method-grid{padding-left:0;}
+  .method-actions{grid-template-columns:1fr;}
+  footer{flex-direction:column;}
+}
+</style>
+<style>html,body,#root{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;margin:0;padding:0}html,body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Helvetica Neue,Arial,sans-serif!important}button,input,textarea,select{font-family:inherit}html{background-color:#fff}html.dark{background-color:#212121}html.mobileSkybridge.dark{background-color:#000}@supports (font: -apple-system-body){html.mobileSkybridge{font:-apple-system-body}}html.desktopSkybridge.dark{background-color:#1e1e1e}html.androidSkybridge,html.androidSkybridge body,html.androidSkybridge *{-webkit-tap-highlight-color:rgba(255,255,255,0)}html.androidSkybridge *::selection,html.androidSkybridge *::-moz-selection{background:#fff0;color:inherit}</style></head>
+<body>
+<div class="topbar">
+  <nav class="nav">
+    <a href="https://web-sandbox.oaiusercontent.com/?#inicio" class="nav-brand">
+      <div class="brand-mark">IO</div>
+      <div>
+        <strong>Investigación de Operaciones</strong>
+        <span>Portal académico interactivo</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="https://web-sandbox.oaiusercontent.com/?#metodos">Métodos</a>
+      <a href="https://web-sandbox.oaiusercontent.com/?#referencias">Referencias</a>
+      <a href="https://web-sandbox.oaiusercontent.com/?#contacto">Contacto</a>
+    </div>
+  </nav>
+</div>
+
+<section class="hero" id="inicio">
+  <div class="hero-copy">
+    <div class="kicker">Investigación de Operaciones</div>
+    <h1><em>Investigación</em> de Operaciones</h1>
+    <div class="hero-text">
+      <p>La Investigación de Operaciones es una disciplina que utiliza modelos matemáticos, algoritmos y técnicas cuantitativas para apoyar la toma de decisiones en sistemas complejos. Su objetivo es optimizar recursos, reducir costos, mejorar procesos y analizar escenarios mediante herramientas matemáticas y computacionales.</p>
+      <p>En ingeniería, administración, logística, manufactura y ciencia de datos, la Investigación de Operaciones permite resolver problemas relacionados con asignación de recursos, transporte, inventarios, rutas, programación de proyectos, redes y modelos probabilísticos.</p>
+    </div>
+    <div class="hero-actions">
+      <a href="https://web-sandbox.oaiusercontent.com/?#metodos" class="btn-primary">Explorar métodos</a>
+      <a href="https://web-sandbox.oaiusercontent.com/?#referencias" class="btn-outline">Ver bibliografía</a>
+    </div>
+    <div class="hero-photo">
+   <img src="./foto-perfil.jpg" alt="Dr. Miguel" class="profile-photo">
+</div>
+
+  </div>
+
+  <aside class="identity-panel">
+    <div class="logo-box">Espacio para logo<br><small>logo.png</small></div>
+    <div class="contact-mini">
+      <strong>Dr. Carlos Miguel López Martínez</strong>
+      <span>Profesor · Ingeniería · Investigación de Operaciones · Ciencia de Datos</span>
+      <span>Oaxaca, México · Edición Académica 2026</span>
+    </div>
+  </aside>
+</section>
+
+<section class="stats">
+  <div class="stat-card"><div class="num">11</div><div class="label">Módulos interactivos</div></div>
+  <div class="stat-card"><div class="num">06</div><div class="label">Bloques temáticos</div></div>
+  <div class="stat-card"><div class="num">100%</div><div class="label">Diseño académico</div></div>
+  <div class="stat-card"><div class="num">HTML</div><div class="label">Ejecución local</div></div>
+</section>
+
+<main id="metodos">
+  <div class="section-title-row">
+    <h2>Métodos disponibles</h2>
+     </div>
+
+  <section class="category">
+    <div class="category-head">
+      <div class="category-number">01</div>
+      <div class="category-info">
+        <div class="label">Optimización determinística</div>
+        <h3>Programación lineal</h3>
+        <p>Modelos con función objetivo lineal y restricciones lineales, útiles para maximizar utilidad o minimizar costos bajo recursos limitados.</p>
+      </div>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <span class="method-tag">PPL · 2 variables</span>
+        <h4>Método <em>Gráfico</em></h4>
+        <p>Construye la región factible, evalúa los vértices y determina la solución óptima de modelos con dos variables de decisión.</p>
+        <div class="pills"><span class="pill">Región factible</span><span class="pill">Vértices</span><span class="pill">Gráfica</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/PPL_Grafico.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+      <article class="method-card">
+        <span class="method-tag">PPL · Algebraico</span>
+        <h4>Método <em>Simplex</em></h4>
+        <p>Resuelve problemas de programación lineal mediante tablas iterativas, variables básicas y criterios de optimalidad.</p>
+        <div class="pills"><span class="pill">Tablas</span><span class="pill">Iteraciones</span><span class="pill">Gran M</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/PPL_Simplex.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="category">
+    <div class="category-head">
+      <div class="category-number">02</div>
+      <div class="category-info">
+        <div class="label">Logística y redes</div>
+        <h3>Distribución, rutas y flujos</h3>
+        <p>Modelos orientados a mover recursos a través de redes, rutas, centros intermedios y sistemas con capacidad limitada.</p>
+      </div>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <span class="method-tag">Transporte</span>
+        <h4>Modelo de <em>Transporte</em></h4>
+        <p>Asigna envíos desde orígenes hacia destinos minimizando el costo total y respetando oferta y demanda.</p>
+        <div class="pills"><span class="pill">Noroeste</span><span class="pill">Costo mínimo</span><span class="pill">Vogel</span><span class="pill">MODI</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/PPL_Transporte.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+      <article class="method-card">
+        <span class="method-tag">Transbordo</span>
+        <h4>Modelo de <em>Transbordo</em></h4>
+        <p>Incorpora nodos intermedios que pueden recibir y enviar flujo, representando redes logísticas más realistas.</p>
+        <div class="pills"><span class="pill">Nodos mixtos</span><span class="pill">Red equivalente</span><span class="pill">MODI</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/PPL_Transbordo.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+      <article class="method-card">
+        <span class="method-tag">Rutas</span>
+        <h4>Ruta <em>Más Corta</em></h4>
+        <p>Determina el camino de menor distancia, costo o tiempo entre un origen y un destino dentro de un grafo.</p>
+        <div class="pills"><span class="pill">Dijkstra</span><span class="pill">Grafos</span><span class="pill">Nodos</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/Dijkstra.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+      <article class="method-card">
+        <span class="method-tag">Flujos</span>
+        <h4>Flujo <em>Máximo</em></h4>
+        <p>Calcula la mayor cantidad de flujo que puede enviarse desde una fuente hasta un sumidero respetando capacidades.</p>
+        <div class="pills"><span class="pill">Ford-Fulkerson</span><span class="pill">Edmonds-Karp</span><span class="pill">Corte mínimo</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/flujo_maximo.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="category">
+    <div class="category-head">
+      <div class="category-number">03</div>
+      <div class="category-info">
+        <div class="label">Asignación de recursos</div>
+        <h3>Asignación óptima</h3>
+        <p>Modelos para emparejar agentes con tareas, máquinas o proyectos optimizando costo, tiempo o beneficio.</p>
+      </div>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <span class="method-tag">Asignación</span>
+        <h4>Método <em>Húngaro</em></h4>
+        <p>Resuelve asignaciones uno a uno mediante transformaciones matriciales y selección de ceros independientes.</p>
+        <div class="pills"><span class="pill">Min/Max</span><span class="pill">Balance</span><span class="pill">Matriz</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/Asignacion.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="category">
+    <div class="category-head">
+      <div class="category-number">04</div>
+      <div class="category-info">
+        <div class="label">Administración de proyectos</div>
+        <h3>Planeación y ruta crítica</h3>
+        <p>Herramientas para programar actividades, estimar duración del proyecto, identificar holguras y evaluar riesgos de tiempo.</p>
+      </div>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <span class="method-tag">Proyectos</span>
+        <h4>Métodos <em>PERT y CPM</em></h4>
+        <p>Calculan tiempos tempranos y tardíos, ruta crítica, holguras, Gantt y probabilidad de cumplimiento en PERT.</p>
+        <div class="pills"><span class="pill">Ruta crítica</span><span class="pill">PERT</span><span class="pill">CPM</span><span class="pill">Gantt</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/PertCpm.html">Abrir módulo</a><span class="ref-badge pending">Refs.</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="category">
+    <div class="category-head">
+      <div class="category-number">05</div>
+      <div class="category-info">
+        <div class="label">Operaciones e inventarios</div>
+        <h3>Inventarios y sistemas de servicio</h3>
+        <p>Modelos para equilibrar costos de abastecimiento, mantenimiento de inventario y desempeño de sistemas con espera.</p>
+      </div>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <span class="method-tag">Inventarios</span>
+        <h4>Modelo <em>EOQ</em></h4>
+        <p>Determina la cantidad económica de pedido que minimiza costos de ordenar y mantener inventario.</p>
+        <div class="pills"><span class="pill">Q*</span><span class="pill">ROP</span><span class="pill">Stock seguridad</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/EOQ.html">Abrir módulo</a><span class="ref-badge">OK</span></div>
+      </article>
+      <article class="method-card">
+        <span class="method-tag">Servicios</span>
+        <h4>Teoría de <em>Colas</em></h4>
+        <p>Evalúa utilización, longitud de cola, tiempos de espera y probabilidad de sistema vacío en modelos M/M/1 y M/M/s.</p>
+        <div class="pills"><span class="pill">M/M/1</span><span class="pill">M/M/s</span><span class="pill">Erlang C</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/teoria_colas.html">Abrir módulo</a><span class="ref-badge">OK</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="category">
+    <div class="category-head">
+      <div class="category-number">06</div>
+      <div class="category-info">
+        <div class="label">Probabilidad aplicada</div>
+        <h3>Procesos estocásticos</h3>
+        <p>Modelos donde el comportamiento del sistema se describe mediante estados, transiciones y probabilidades en el tiempo.</p>
+      </div>
+    </div>
+    <div class="method-grid">
+      <article class="method-card">
+        <span class="method-tag">Markov</span>
+        <h4>Cadenas de <em>Markov</em></h4>
+        <p>Permiten calcular distribuciones futuras y estado estacionario a partir de una matriz de transición.</p>
+        <div class="pills"><span class="pill">πₙ = π₀Pⁿ</span><span class="pill">Estado estacionario</span><span class="pill">Grafo</span></div>
+        <div class="method-actions"><a class="open-link" href="https://web-sandbox.oaiusercontent.com/Markov.html">Abrir módulo</a><span class="ref-badge">OK</span></div>
+      </article>
+    </div>
+  </section>
+
+  <section class="info-area">
+    <article class="info-card" id="referencias">
+      <h2>Referencias académicas generales</h2>
+      <p>Estas fuentes sirven como base bibliográfica general. Cada módulo puede conservar además referencias específicas del algoritmo implementado.</p>
+      <ul>
+        <li>Taha, H. A. <em>Investigación de Operaciones</em>. Pearson.</li>
+        <li>Hillier, F. S. &amp; Lieberman, G. J. <em>Introducción a la Investigación de Operaciones</em>. McGraw-Hill.</li>
+        <li>Winston, W. L. <em>Operations Research: Applications and Algorithms</em>. Cengage Learning.</li>
+        <li>Render, B., Stair, R. &amp; Hanna, M. <em>Métodos Cuantitativos para los Negocios</em>. Pearson.</li>
+        <li>Ross, S. M. <em>Introduction to Probability Models</em>. Academic Press.</li>
+        <li>Gross, D. &amp; Harris, C. M. <em>Fundamentals of Queueing Theory</em>. Wiley.</li>
+        <li>Harris, F. W. (1913). <em>How Many Parts to Make at Once</em>.</li>
+      </ul>
+    </article>
+
+    <article class="info-card" id="contacto">
+      <h2>Datos de contacto</h2>
+      <p>Espacio reservado para los datos institucionales, enlaces académicos y medios de contacto.</p>
+      <div class="contact-list">
+        <div class="contact-item"><strong>Nombre</strong>Dr. Carlos Miguel López Martínez</div>
+        <div class="contact-item"><strong>Correo electrónico</strong>correo@dominio.edu.mx</div>
+        <div class="contact-item"><strong>Institución</strong>Universidad / Facultad / Coordinación</div>
+        <div class="contact-item"><strong>Ubicación</strong>Oaxaca, México</div>
+        <div class="contact-item"><strong>Sitio o repositorio</strong>https://tusitio.com</div>
+      </div>
+    </article>
+  </section>
+</main>
+
+<footer>
+  <div>Portal de Investigación de Operaciones · Dr. Carlos Miguel López Martínez</div>
+  <div>Optimización · Redes · Inventarios · Probabilidad</div>
+</footer>
+
+</body></html>
