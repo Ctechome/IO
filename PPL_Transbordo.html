@@ -653,7 +653,7 @@ document.getElementById('example-btn').addEventListener('click',()=>{
   document.querySelectorAll('.arc-check').forEach(c=>c.checked=false);
   const arcs=[['S1','T1',4],['S1','T2',6],['S1','D1',9],['S2','T1',5],['S2','T2',4],['S2','D3',8],['T1','D1',3],['T1','D2',4],['T2','D2',2],['T2','D3',5],['T1','T2',1]];
   arcs.forEach(([f,t,c])=>{const chk=document.querySelector(`.arc-check[data-from="${f}"][data-to="${t}"]`);const inp=document.querySelector(`.arc-cost[data-from="${f}"][data-to="${t}"]`);if(chk&&inp){chk.checked=true;inp.value=c;}});
-  document.getElementById('solve-btn').click();
+ // document.getElementById('solve-btn').click();
 });
 
 buildInterface();
